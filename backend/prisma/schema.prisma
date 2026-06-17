@@ -11,3 +11,280 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  CASHIER
+}
+
+enum CustomerType {
+  REGULAR
+  SPECIAL
+}
+
+enum PaymentMethod {
+  CASH
+  NEQUI
+  BANCOLOMBIA
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+enum LoanStatus {
+  ACTIVE
+  PAID
+}
+
+enum InventoryMovementType {
+  SALE
+  RETURN
+  EXCHANGE
+  BRANCH_TRANSFER
+  STOCK_IN
+  STOCK_OUT
+}
+
+model Company {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  branches Branch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Branch {
+  id      String  @id @default(uuid())
+  name    String
+  address String?
+  phone   String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  users       User[]
+  customers   Customer[]
+  inventories Inventory[]
+
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  sales     Sale[]
+  movements InventoryMovement[]
+}
+
+model User {
+  id String @id @default(uuid())
+
+  username     String @unique
+  passwordHash String
+
+  role Role
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+}
+
+model Customer {
+  id String @id @default(uuid())
+
+  firstName String
+  lastName  String?
+
+  phone   String?
+  address String?
+
+  type CustomerType @default(REGULAR)
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+  loans     Loan[]
+}
+
+model Category {
+  id String @id @default(uuid())
+
+  name String
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id String @id @default(uuid())
+
+  name String
+
+  barcode String @unique
+
+  purchasePrice Decimal
+  salePrice     Decimal
+
+  isActive Boolean @default(true)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  inventories Inventory[]
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  saleDetails SaleDetail[]
+  movements   InventoryMovement[]
+}
+
+model Inventory {
+  id String @id @default(uuid())
+
+  amount Int @default(0)
+
+  branchId  String
+  productId String
+
+  branch  Branch  @relation(fields: [branchId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements InventoryMovement[]
+
+  @@unique([branchId, productId])
+}
+
+model Sale {
+  id String @id @default(uuid())
+
+  invoiceNumber Int
+
+  total Decimal
+
+  payments SalePayment[]
+
+  isCredit Boolean @default(false)
+
+  status SaleStatus @default(COMPLETED)
+
+  branchId   String
+  userId     String
+  customerId String?
+  loan       Loan?
+
+  branch   Branch    @relation(fields: [branchId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  details SaleDetail[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, invoiceNumber])
+}
+
+model SaleDetail {
+  id String @id @default(uuid())
+
+  saleId    String
+  productId String
+
+  quantity Int
+
+  unitPrice Decimal
+  discount  Decimal @default(0)
+
+  subtotal Decimal
+
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements InventoryMovement[]
+
+  @@unique([saleId, productId])
+}
+
+model SalePayment {
+  id String @id @default(uuid())
+
+  saleId String
+
+  amount Decimal
+
+  paymentMethod PaymentMethod
+
+  sale Sale @relation(fields: [saleId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Loan {
+  id String @id @default(uuid())
+
+  originalAmount Decimal
+  pendingAmount  Decimal
+
+  saleId     String @unique
+  customerId String
+
+  loanStatus LoanStatus @default(ACTIVE)
+
+  payments LoanPayment[]
+
+  sale     Sale     @relation(fields: [saleId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LoanPayment {
+  id String @id @default(uuid())
+
+  loanId String
+  amount Decimal
+
+  paymentMethod PaymentMethod
+  loan          Loan          @relation(fields: [loanId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model InventoryMovement {
+  id String @id @default(uuid())
+
+  inventoryId String
+  productId   String
+  branchId    String
+  note        String?
+
+  quantity Int
+
+  type InventoryMovementType
+
+  saleDetailId String?
+
+  saleDetail SaleDetail? @relation(fields: [saleDetailId], references: [id])
+  inventory  Inventory   @relation(fields: [inventoryId], references: [id])
+  product    Product     @relation(fields: [productId], references: [id])
+  branch     Branch      @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+}
