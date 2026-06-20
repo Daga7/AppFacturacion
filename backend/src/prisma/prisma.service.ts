@@ -3,10 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit
-{
+export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
     const adapter = new PrismaPg({
       connectionString: process.env.DIRECT_URL!,

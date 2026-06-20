@@ -91,6 +91,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sales     Sale[]
+  refreshTokens RefreshToken[] 
 }
 
 model Customer {
@@ -285,5 +286,13 @@ model InventoryMovement {
   product    Product     @relation(fields: [productId], references: [id])
   branch     Branch      @relation(fields: [branchId], references: [id])
 
+  createdAt DateTime @default(now())
+}
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
 }
