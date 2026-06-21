@@ -1,4 +1,4 @@
-const BASE_URL = "";
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem("accessToken");
