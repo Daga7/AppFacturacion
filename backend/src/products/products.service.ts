@@ -1,26 +1,83 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  create(_dto: CreateProductDto) {
-    return 'This action adds a new product';
+  constructor(private prisma: PrismaService) {}
+
+  async create(dto: CreateProductDto) {
+    const existing = await this.prisma.product.findUnique({
+      where: { barcode: dto.barcode },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Ya existe un producto con ese código de barras',
+      );
+    }
+
+    const product = await this.prisma.product.create({
+      data: dto,
+      include: { category: true },
+    });
+    return JSON.parse(JSON.stringify(product)) as typeof product;
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll() {
+    const products = await this.prisma.product.findMany({
+      include: { category: true, inventories: true },
+    });
+    return JSON.parse(JSON.stringify(products)) as typeof products;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: { category: true, inventories: true },
+    });
+    if (!product) throw new NotFoundException('Producto no encontrado');
+    return JSON.parse(JSON.stringify(product)) as typeof product;
   }
 
-  update(id: number, _dto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async findByBarcode(barcode: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { barcode },
+      include: { category: true, inventories: true },
+    });
+    if (!product) throw new NotFoundException('Producto no encontrado');
+    return JSON.parse(JSON.stringify(product)) as typeof product;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async update(id: string, dto: UpdateProductDto) {
+    await this.findOne(id);
+
+    if (dto.barcode) {
+      const existing = await this.prisma.product.findUnique({
+        where: { barcode: dto.barcode },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(
+          'Ya existe un producto con ese código de barras',
+        );
+      }
+    }
+
+    const product = await this.prisma.product.update({
+      where: { id },
+      data: dto,
+      include: { category: true },
+    });
+    return JSON.parse(JSON.stringify(product)) as typeof product;
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.prisma.product.delete({ where: { id } });
+    return { message: 'Producto eliminado' };
   }
 }
