@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth";
 
 type RoleKey = "ADMIN" | "SUPERVISOR" | "CASHIER";
@@ -28,7 +29,13 @@ export default function Login() {
   const [selected, setSelected] = useState<RoleKey | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const user = useAuthStore((s) => s.user);
   const { login, loading, error } = useAuthStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) navigate("/dashboard", { replace: true });
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
