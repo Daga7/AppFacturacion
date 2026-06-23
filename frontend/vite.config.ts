@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "icons.svg", "pwa-192x192.png", "pwa-512x512.png", "pwa-maskable-192x192.png", "pwa-maskable-512x512.png"],
       manifest: {
-        name: "Facturación App",
-        short_name: "Facturación",
+        name: "EL BODEGÓN DE LA TECNOLOGÍA",
+        short_name: "EL BODEGÓN",
         description: "Sistema de facturación e inventario",
         theme_color: "#1e293b",
         background_color: "#0f172a",

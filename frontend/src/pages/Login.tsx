@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth";
+import { APP_NAME } from "../lib/constants";
 
 type RoleKey = "ADMIN" | "SUPERVISOR" | "CASHIER";
 
@@ -55,7 +56,7 @@ export default function Login() {
       <div className="w-full max-w-lg">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold tracking-tight text-white mb-2">
-            Facturación App
+            [APP_NAME]
           </h1>
           <p className="text-slate-400 text-sm">
             Selecciona tu rol para ingresar

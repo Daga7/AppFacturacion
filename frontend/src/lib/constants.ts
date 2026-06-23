@@ -1,0 +1,1 @@
+export const APP_NAME = "EL BODEGÓN DE LA TECNOLOGÍA";
