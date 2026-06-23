@@ -23,7 +23,7 @@ export default function Layout() {
       <aside className="w-60 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-5 border-b border-slate-800">
           <h1 className="text-lg font-bold text-white tracking-tight">
-            Facturación App
+            EL BODEGON DE LA TECNOLOGIA
           </h1>
         </div>
 
