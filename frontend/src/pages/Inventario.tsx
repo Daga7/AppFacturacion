@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../lib/api";
 
 interface Category {
@@ -36,6 +36,12 @@ export default function Inventario() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [stock, setStock] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [lastScan, setLastScan] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const barcodeRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -140,6 +146,45 @@ export default function Inventario() {
     setShowCategoryForm(true);
   };
 
+  // Auto-foco en el buscador al entrar a la pestaña de productos para que
+  // el lector de código de barras escriba directamente aquí.
+  useEffect(() => {
+    if (tab === "productos") searchRef.current?.focus();
+  }, [tab]);
+
+  // Al abrir el formulario de "Nuevo producto", enfocar el campo de código de
+  // barras para poder escanear de inmediato sin hacer clic.
+  useEffect(() => {
+    if (showProductForm && !editingProduct) barcodeRef.current?.focus();
+  }, [showProductForm, editingProduct]);
+
+  // El lector envía un Enter al final del código. En vez de no hacer nada,
+  // saltamos al siguiente campo (Nombre) para encadenar el llenado.
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      nameRef.current?.focus();
+    }
+  };
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredProducts = normalizedSearch
+    ? products.filter(
+        (p) =>
+          p.barcode.toLowerCase().includes(normalizedSearch) ||
+          p.name.toLowerCase().includes(normalizedSearch),
+      )
+    : products;
+
+  // Un lector de códigos de barras normalmente envía un Enter al final.
+  // Lo capturamos para registrar exactamente el valor recibido.
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      setLastScan(search.trim());
+    }
+  };
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "productos", label: "Productos" },
     { key: "categorias", label: "Categorías" },
@@ -176,7 +221,9 @@ export default function Inventario() {
       {tab === "productos" && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">{products.length} productos</h3>
+            <h3 className="text-lg font-semibold text-white">
+              {normalizedSearch ? `${filteredProducts.length} de ${products.length}` : products.length} productos
+            </h3>
             <button
               onClick={() => { setEditingProduct(null); setProductForm(emptyProduct); setShowProductForm(true); }}
               className="px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors"
@@ -185,12 +232,43 @@ export default function Inventario() {
             </button>
           </div>
 
+          <div className="mb-4">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">⌗</span>
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Escanea o escribe el código de barras (o nombre)…"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-9 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand"
+                autoFocus
+              />
+              {search && (
+                <button
+                  onClick={() => { setSearch(""); setLastScan(null); searchRef.current?.focus(); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-sm"
+                  aria-label="Limpiar búsqueda"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {lastScan !== null && (
+              <p className="mt-2 text-xs text-slate-400">
+                Último código recibido:{" "}
+                <span className="font-mono text-emerald-400">{lastScan || "(vacío)"}</span>
+                <span className="text-slate-600"> · {lastScan.length} caracteres</span>
+              </p>
+            )}
+          </div>
+
           {showProductForm && (
             <div className="mb-4 p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
               <h4 className="text-white font-medium">{editingProduct ? "Editar producto" : "Nuevo producto"}</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input placeholder="Nombre" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" />
-                <input placeholder="Código de barras" value={productForm.barcode} onChange={(e) => setProductForm({ ...productForm, barcode: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" />
+                <input ref={nameRef} placeholder="Nombre" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm" />
+                <input ref={barcodeRef} onKeyDown={handleBarcodeKeyDown} inputMode="numeric" placeholder="Código de barras (escanear o escribir)" value={productForm.barcode} onChange={(e) => setProductForm({ ...productForm, barcode: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm font-mono" />
                 <select value={productForm.categoryId} onChange={(e) => setProductForm({ ...productForm, categoryId: e.target.value })} className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm">
                   <option value="">Seleccionar categoría</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -222,7 +300,7 @@ export default function Inventario() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((p) => {
+                  {filteredProducts.map((p) => {
                     const totalStock = p.inventories?.reduce((s, i) => s + i.amount, 0) ?? 0;
                     return (
                       <tr key={p.id} className="border-b border-slate-800/50">
@@ -243,8 +321,12 @@ export default function Inventario() {
                       </tr>
                     );
                   })}
-                  {products.length === 0 && (
-                    <tr><td colSpan={7} className="py-8 text-center text-slate-500">No hay productos registrados</td></tr>
+                  {filteredProducts.length === 0 && (
+                    <tr><td colSpan={7} className="py-8 text-center text-slate-500">
+                      {normalizedSearch
+                        ? `No se encontró ningún producto para "${search.trim()}"`
+                        : "No hay productos registrados"}
+                    </td></tr>
                   )}
                 </tbody>
               </table>
