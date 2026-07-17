@@ -3,9 +3,23 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
+import { InventoryMovementType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdjustStockDto } from './dto/adjust-stock.dto';
+import { BulkAdjustStockDto } from './dto/bulk-adjust-stock.dto';
 import { TransferStockDto } from './dto/transfer-stock.dto';
+import { UpdateMovementDto } from './dto/update-movement.dto';
+
+// Convención de cantidades en InventoryMovement (igual que SALE en sales.service):
+// positiva = entra stock a la sucursal, negativa = sale stock de la sucursal.
+// En una transferencia el lado negativo es el origen y el positivo el destino.
+
+const EDITABLE_TYPES: InventoryMovementType[] = [
+  'STOCK_IN',
+  'STOCK_OUT',
+  'BRANCH_TRANSFER',
+];
 
 @Injectable()
 export class InventoryService {
@@ -24,10 +38,16 @@ export class InventoryService {
     return JSON.parse(JSON.stringify(inventory)) as typeof inventory;
   }
 
-  async getMovements(branchId?: string, limit = 50) {
-    const where = branchId ? { branchId } : {};
+  async getMovements(
+    branchId?: string,
+    limit = 50,
+    type?: InventoryMovementType,
+  ) {
     const movements = await this.prisma.inventoryMovement.findMany({
-      where,
+      where: {
+        ...(branchId ? { branchId } : {}),
+        ...(type ? { type } : {}),
+      },
       include: {
         product: true,
         branch: true,
@@ -40,7 +60,17 @@ export class InventoryService {
   }
 
   async adjustStock(dto: AdjustStockDto) {
-    const { productId, branchId, quantity, type, note } = dto;
+    const result = await this.adjustStockBulk({
+      branchId: dto.branchId,
+      type: dto.type,
+      note: dto.note,
+      items: [{ productId: dto.productId, quantity: dto.quantity }],
+    });
+    return { inventory: result.inventories[0], movement: result.movements[0] };
+  }
+
+  async adjustStockBulk(dto: BulkAdjustStockDto) {
+    const { branchId, type, items, note } = dto;
 
     if (type !== 'STOCK_IN' && type !== 'STOCK_OUT') {
       throw new BadRequestException(
@@ -48,53 +78,67 @@ export class InventoryService {
       );
     }
 
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
-    if (!product) throw new NotFoundException('Producto no encontrado');
-
     const branch = await this.prisma.branch.findUnique({
       where: { id: branchId },
     });
     if (!branch) throw new NotFoundException('Sucursal no encontrada');
 
-    let inventory = await this.prisma.inventory.findUnique({
-      where: { branchId_productId: { branchId, productId } },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const inventories: { id: string; amount: number }[] = [];
+      const movements: { id: string }[] = [];
+
+      for (const item of items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+        });
+        if (!product) {
+          throw new NotFoundException(
+            `Producto ${item.productId} no encontrado`,
+          );
+        }
+
+        let inventory = await tx.inventory.findUnique({
+          where: {
+            branchId_productId: { branchId, productId: item.productId },
+          },
+        });
+        if (!inventory) {
+          inventory = await tx.inventory.create({
+            data: { branchId, productId: item.productId, amount: 0 },
+          });
+        }
+
+        const delta = type === 'STOCK_IN' ? item.quantity : -item.quantity;
+        if (inventory.amount + delta < 0) {
+          throw new BadRequestException(
+            `Stock insuficiente de "${product.name}" en ${branch.name} (disponible: ${inventory.amount})`,
+          );
+        }
+
+        const updated = await tx.inventory.update({
+          where: { id: inventory.id },
+          data: { amount: inventory.amount + delta },
+        });
+
+        const movement = await tx.inventoryMovement.create({
+          data: {
+            inventoryId: inventory.id,
+            productId: item.productId,
+            branchId,
+            quantity: delta,
+            type,
+            note,
+          },
+        });
+
+        inventories.push(updated);
+        movements.push(movement);
+      }
+
+      return { inventories, movements };
     });
 
-    if (!inventory) {
-      inventory = await this.prisma.inventory.create({
-        data: { branchId, productId, amount: 0 },
-      });
-    }
-
-    const delta =
-      type === 'STOCK_IN' ? quantity : type === 'STOCK_OUT' ? -quantity : 0;
-
-    if (delta < 0 && inventory.amount + delta < 0) {
-      throw new BadRequestException('Stock insuficiente');
-    }
-
-    const updated = await this.prisma.inventory.update({
-      where: { id: inventory.id },
-      data: { amount: inventory.amount + delta },
-    });
-
-    const movement = await this.prisma.inventoryMovement.create({
-      data: {
-        inventoryId: inventory.id,
-        productId,
-        branchId,
-        quantity,
-        type,
-        note,
-      },
-    });
-
-    return JSON.parse(JSON.stringify({ inventory: updated, movement })) as {
-      inventory: typeof updated;
-      movement: typeof movement;
-    };
+    return JSON.parse(JSON.stringify(result)) as typeof result;
   }
 
   async transferStock(dto: TransferStockDto) {
@@ -160,14 +204,17 @@ export class InventoryService {
           update: { amount: { increment: item.quantity } },
         });
 
+        const transferGroupId = crypto.randomUUID();
+
         const movementOut = await tx.inventoryMovement.create({
           data: {
             inventoryId: source.id,
             productId: item.productId,
             branchId: fromBranchId,
-            quantity: item.quantity,
+            quantity: -item.quantity,
             type: 'BRANCH_TRANSFER',
-            note: note ? `Hacia ${to.name} — ${note}` : `Hacia ${to.name}`,
+            transferGroupId,
+            note,
           },
         });
         const movementIn = await tx.inventoryMovement.create({
@@ -177,7 +224,8 @@ export class InventoryService {
             branchId: toBranchId,
             quantity: item.quantity,
             type: 'BRANCH_TRANSFER',
-            note: note ? `Desde ${from.name} — ${note}` : `Desde ${from.name}`,
+            transferGroupId,
+            note,
           },
         });
         created.push(movementOut, movementIn);
@@ -188,6 +236,151 @@ export class InventoryService {
 
     return JSON.parse(JSON.stringify({ movements })) as {
       movements: typeof movements;
+    };
+  }
+
+  async updateMovement(id: string, dto: UpdateMovementDto) {
+    const movement = await this.prisma.inventoryMovement.findUnique({
+      where: { id },
+      include: { product: true, branch: true },
+    });
+    if (!movement) throw new NotFoundException('Movimiento no encontrado');
+
+    if (!EDITABLE_TYPES.includes(movement.type)) {
+      throw new BadRequestException(
+        'Solo se pueden editar movimientos de ingreso, salida o transferencia; los de ventas se gestionan desde facturación',
+      );
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (movement.type === 'BRANCH_TRANSFER') {
+        if (!movement.transferGroupId) {
+          throw new BadRequestException(
+            'Esta transferencia no tiene vínculo entre sus dos lados y no se puede editar',
+          );
+        }
+
+        const pair = await tx.inventoryMovement.findMany({
+          where: { transferGroupId: movement.transferGroupId },
+          include: { branch: true, product: true },
+        });
+        const out = pair.find((m) => m.quantity < 0);
+        const into = pair.find((m) => m.quantity > 0);
+        if (!out || !into) {
+          throw new BadRequestException(
+            'La transferencia está incompleta y no se puede editar',
+          );
+        }
+
+        if (dto.quantity !== undefined && dto.quantity !== into.quantity) {
+          const oldQ = into.quantity;
+          const newQ = dto.quantity;
+
+          const source = await tx.inventory.findUnique({
+            where: { id: out.inventoryId },
+          });
+          const dest = await tx.inventory.findUnique({
+            where: { id: into.inventoryId },
+          });
+          if (!source || !dest) {
+            throw new NotFoundException(
+              'Inventario de la transferencia no encontrado',
+            );
+          }
+
+          const sourceNew = source.amount + (oldQ - newQ);
+          const destNew = dest.amount + (newQ - oldQ);
+          if (sourceNew < 0) {
+            throw new BadRequestException(
+              `Stock insuficiente en ${out.branch.name}: el cambio dejaría su stock en ${sourceNew}`,
+            );
+          }
+          if (destNew < 0) {
+            throw new BadRequestException(
+              `El cambio dejaría el stock de ${into.branch.name} en ${destNew} (ya se consumieron unidades transferidas)`,
+            );
+          }
+
+          await tx.inventory.update({
+            where: { id: source.id },
+            data: { amount: sourceNew },
+          });
+          await tx.inventory.update({
+            where: { id: dest.id },
+            data: { amount: destNew },
+          });
+          await tx.inventoryMovement.update({
+            where: { id: out.id },
+            data: { quantity: -newQ },
+          });
+          await tx.inventoryMovement.update({
+            where: { id: into.id },
+            data: { quantity: newQ },
+          });
+        }
+
+        if (dto.note !== undefined) {
+          await tx.inventoryMovement.updateMany({
+            where: { transferGroupId: movement.transferGroupId },
+            data: { note: dto.note || null },
+          });
+        }
+
+        return tx.inventoryMovement.findMany({
+          where: { transferGroupId: movement.transferGroupId },
+          include: { product: true, branch: true },
+        });
+      }
+
+      // STOCK_IN / STOCK_OUT: la cantidad guardada ya tiene signo; el DTO
+      // recibe siempre una cantidad positiva y aquí se le aplica el signo.
+      if (dto.quantity !== undefined) {
+        const newSigned =
+          movement.type === 'STOCK_IN' ? dto.quantity : -dto.quantity;
+
+        if (newSigned !== movement.quantity) {
+          const inventory = await tx.inventory.findUnique({
+            where: { id: movement.inventoryId },
+          });
+          if (!inventory) {
+            throw new NotFoundException(
+              'Inventario del movimiento no encontrado',
+            );
+          }
+
+          const newAmount = inventory.amount - movement.quantity + newSigned;
+          if (newAmount < 0) {
+            throw new BadRequestException(
+              `El cambio dejaría el stock de ${movement.branch.name} en ${newAmount}`,
+            );
+          }
+
+          await tx.inventory.update({
+            where: { id: inventory.id },
+            data: { amount: newAmount },
+          });
+          await tx.inventoryMovement.update({
+            where: { id },
+            data: { quantity: newSigned },
+          });
+        }
+      }
+
+      if (dto.note !== undefined) {
+        await tx.inventoryMovement.update({
+          where: { id },
+          data: { note: dto.note || null },
+        });
+      }
+
+      return tx.inventoryMovement.findMany({
+        where: { id },
+        include: { product: true, branch: true },
+      });
+    });
+
+    return JSON.parse(JSON.stringify({ movements: result })) as {
+      movements: typeof result;
     };
   }
 

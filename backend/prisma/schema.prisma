@@ -279,6 +279,10 @@ model InventoryMovement {
 
   type InventoryMovementType
 
+  // Vincula los dos movimientos (salida del origen, entrada al destino) de una
+  // misma transferencia entre sedes. El lado negativo es el origen.
+  transferGroupId String?
+
   saleDetailId String?
 
   saleDetail SaleDetail? @relation(fields: [saleDetailId], references: [id])

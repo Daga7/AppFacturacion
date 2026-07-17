@@ -25,20 +25,54 @@ interface StockItem {
   product: Product;
   branch: { id: string; name: string };
 }
+interface Movement {
+  id: string;
+  quantity: number;
+  type: string;
+  note?: string | null;
+  createdAt: string;
+  transferGroupId?: string | null;
+  product: { id: string; name: string; barcode: string };
+  branch: { id: string; name: string };
+}
 
-type Tab = "productos" | "categorias" | "stock";
+type Tab = "productos" | "categorias" | "stock" | "movimientos";
 type StockAction = "in" | "out" | "transfer" | null;
+type MovType = "STOCK_IN" | "STOCK_OUT" | "BRANCH_TRANSFER";
 
 type ProductForm = { name: string; barcode: string; purchasePrice: string; salePrice: string; categoryId: string; isActive: boolean };
 type CategoryForm = { name: string };
-type MovementForm = { branchId: string; productId: string; quantity: string; note: string };
-type TransferItem = { productId: string; quantity: string };
-type TransferForm = { fromBranchId: string; toBranchId: string; note: string; items: TransferItem[] };
+type ItemRow = { productId: string; quantity: string };
+type MovementForm = { branchId: string; note: string; items: ItemRow[] };
+type TransferForm = { fromBranchId: string; toBranchId: string; note: string; items: ItemRow[] };
+
+// Fila resumida de la lista de movimientos; una transferencia agrupa sus dos
+// lados (salida del origen + entrada al destino) en una sola fila.
+type MovementRow = {
+  id: string; // id del movimiento a editar vía PATCH
+  type: MovType;
+  productName: string;
+  barcode: string;
+  branchLabel: string;
+  quantity: number; // siempre positiva para mostrar
+  note: string;
+  createdAt: string;
+  editable: boolean;
+};
 
 const emptyProduct: ProductForm = { name: "", barcode: "", purchasePrice: "0", salePrice: "0", categoryId: "", isActive: true };
 const emptyCategory: CategoryForm = { name: "" };
-const emptyMovement: MovementForm = { branchId: "", productId: "", quantity: "", note: "" };
+const emptyMovement: MovementForm = { branchId: "", note: "", items: [{ productId: "", quantity: "" }] };
 const emptyTransfer: TransferForm = { fromBranchId: "", toBranchId: "", note: "", items: [{ productId: "", quantity: "" }] };
+
+const movTypeLabels: Record<MovType, string> = {
+  STOCK_IN: "Ingreso",
+  STOCK_OUT: "Salida",
+  BRANCH_TRANSFER: "Transferencia",
+};
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 
 export default function Inventario() {
   const [tab, setTab] = useState<Tab>("productos");
@@ -46,6 +80,8 @@ export default function Inventario() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [stock, setStock] = useState<StockItem[]>([]);
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [movType, setMovType] = useState<MovType>("STOCK_IN");
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -66,6 +102,10 @@ export default function Inventario() {
   const [movementForm, setMovementForm] = useState<MovementForm>(emptyMovement);
   const [transferForm, setTransferForm] = useState<TransferForm>(emptyTransfer);
   const [saving, setSaving] = useState(false);
+
+  const [selectedMovement, setSelectedMovement] = useState<MovementRow | null>(null);
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editNote, setEditNote] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -102,12 +142,22 @@ export default function Inventario() {
     setLoading(false);
   }, []);
 
+  const loadMovements = useCallback(async (type: MovType) => {
+    setLoading(true);
+    try {
+      const data = await api.get<Movement[]>(`/inventory/movements?type=${type}&limit=100`);
+      setMovements(data);
+    } catch { setError("Error al cargar movimientos"); }
+    setLoading(false);
+  }, []);
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (tab === "productos") { loadProducts(); loadCategories(); loadBranches(); }
     else if (tab === "categorias") loadCategories();
     else if (tab === "stock") { loadStock(); loadProducts(); loadBranches(); }
-  }, [tab, loadProducts, loadCategories, loadBranches, loadStock]);
+    else if (tab === "movimientos") { loadMovements(movType); loadStock(); }
+  }, [tab, movType, loadProducts, loadCategories, loadBranches, loadStock, loadMovements]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSaveProduct = async () => {
@@ -182,23 +232,35 @@ export default function Inventario() {
     setSuccess(null);
   };
 
+  const parseItems = (items: ItemRow[]) =>
+    items
+      .filter((i) => i.productId)
+      .map((i) => ({ productId: i.productId, quantity: parseInt(i.quantity, 10) }));
+
   const handleSubmitMovement = async () => {
-    const qty = parseInt(movementForm.quantity, 10);
-    if (!movementForm.branchId || !movementForm.productId || !qty || qty < 1) {
-      setError("Selecciona punto, producto y una cantidad válida");
+    const parsedItems = parseItems(movementForm.items);
+    if (!movementForm.branchId) {
+      setError("Selecciona el punto");
+      return;
+    }
+    if (parsedItems.length === 0 || parsedItems.some((i) => !i.quantity || i.quantity < 1)) {
+      setError("Agrega al menos un producto con cantidad válida");
       return;
     }
     setSaving(true);
     try {
-      await api.post("/inventory/adjust", {
-        productId: movementForm.productId,
+      await api.post("/inventory/adjust-bulk", {
         branchId: movementForm.branchId,
-        quantity: qty,
         type: stockAction === "in" ? "STOCK_IN" : "STOCK_OUT",
+        items: parsedItems,
         note: movementForm.note.trim() || undefined,
       });
       const branchName = branches.find((b) => b.id === movementForm.branchId)?.name ?? "";
-      setSuccess(stockAction === "in" ? `Ingreso registrado en ${branchName}` : `Salida registrada en ${branchName}`);
+      setSuccess(
+        stockAction === "in"
+          ? `Ingreso de ${parsedItems.length} producto(s) registrado en ${branchName}`
+          : `Salida de ${parsedItems.length} producto(s) registrada en ${branchName}`,
+      );
       setStockAction(null);
       setMovementForm(emptyMovement);
       loadStock();
@@ -216,9 +278,7 @@ export default function Inventario() {
       setError("El origen y el destino deben ser distintos");
       return;
     }
-    const parsedItems = items
-      .filter((i) => i.productId)
-      .map((i) => ({ productId: i.productId, quantity: parseInt(i.quantity, 10) }));
+    const parsedItems = parseItems(items);
     if (parsedItems.length === 0 || parsedItems.some((i) => !i.quantity || i.quantity < 1)) {
       setError("Agrega al menos un producto con cantidad válida");
       return;
@@ -241,11 +301,33 @@ export default function Inventario() {
     setSaving(false);
   };
 
-  const updateTransferItem = (index: number, patch: Partial<TransferItem>) => {
-    setTransferForm((f) => ({
-      ...f,
-      items: f.items.map((it, i) => (i === index ? { ...it, ...patch } : it)),
-    }));
+  const openMovementDetail = (row: MovementRow) => {
+    setSelectedMovement(row);
+    setEditQuantity(String(row.quantity));
+    setEditNote(row.note);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleSaveMovement = async () => {
+    if (!selectedMovement) return;
+    const qty = parseInt(editQuantity, 10);
+    if (!qty || qty < 1) {
+      setError("La cantidad debe ser un número mayor a 0");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.patch(`/inventory/movements/${selectedMovement.id}`, {
+        quantity: qty,
+        note: editNote.trim(),
+      });
+      setSuccess("Movimiento actualizado");
+      setSelectedMovement(null);
+      loadMovements(movType);
+      loadStock();
+    } catch (err) { setError(err instanceof Error ? err.message : "Error"); }
+    setSaving(false);
   };
 
   // Auto-foco en el buscador al entrar a la pestaña de productos para que
@@ -292,6 +374,68 @@ export default function Inventario() {
     (p) => !p.inventories || p.inventories.length === 0,
   );
 
+  // Filas resumidas de movimientos. Las transferencias vienen como dos
+  // movimientos (negativo=origen, positivo=destino) unidos por transferGroupId
+  // y se muestran como una sola fila "Origen → Destino".
+  const movementRows: MovementRow[] = (() => {
+    if (movType !== "BRANCH_TRANSFER") {
+      return movements.map((m) => ({
+        id: m.id,
+        type: movType,
+        productName: m.product.name,
+        barcode: m.product.barcode,
+        branchLabel: m.branch.name,
+        quantity: Math.abs(m.quantity),
+        note: m.note ?? "",
+        createdAt: m.createdAt,
+        editable: true,
+      }));
+    }
+    const grouped = new Map<string, Movement[]>();
+    const loose: Movement[] = [];
+    for (const m of movements) {
+      if (m.transferGroupId) {
+        const list = grouped.get(m.transferGroupId) ?? [];
+        list.push(m);
+        grouped.set(m.transferGroupId, list);
+      } else {
+        loose.push(m);
+      }
+    }
+    const rows: MovementRow[] = [];
+    for (const pair of grouped.values()) {
+      const out = pair.find((m) => m.quantity < 0);
+      const into = pair.find((m) => m.quantity > 0);
+      const ref = into ?? out;
+      if (!ref) continue;
+      rows.push({
+        id: ref.id,
+        type: "BRANCH_TRANSFER",
+        productName: ref.product.name,
+        barcode: ref.product.barcode,
+        branchLabel: out && into ? `${out.branch.name} → ${into.branch.name}` : ref.branch.name,
+        quantity: Math.abs(ref.quantity),
+        note: ref.note ?? "",
+        createdAt: ref.createdAt,
+        editable: Boolean(out && into),
+      });
+    }
+    for (const m of loose) {
+      rows.push({
+        id: m.id,
+        type: "BRANCH_TRANSFER",
+        productName: m.product.name,
+        barcode: m.product.barcode,
+        branchLabel: m.branch.name,
+        quantity: Math.abs(m.quantity),
+        note: m.note ?? "",
+        createdAt: m.createdAt,
+        editable: false,
+      });
+    }
+    return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  })();
+
   // Un lector de códigos de barras normalmente envía un Enter al final.
   // Lo capturamos para registrar exactamente el valor recibido.
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -305,9 +449,59 @@ export default function Inventario() {
     { key: "productos", label: "Productos" },
     { key: "categorias", label: "Categorías" },
     { key: "stock", label: "Stock" },
+    { key: "movimientos", label: "Movimientos" },
   ];
 
   const inputCls = "bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm";
+
+  const renderItemRows = (
+    items: ItemRow[],
+    setItems: (updater: (items: ItemRow[]) => ItemRow[]) => void,
+    availabilityBranchId?: string,
+  ) => (
+    <div className="space-y-2">
+      {items.map((item, i) => (
+        <div key={i} className="flex flex-wrap gap-2 items-center">
+          <select
+            value={item.productId}
+            onChange={(e) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, productId: e.target.value } : it)))}
+            className={`${inputCls} flex-1 min-w-48`}
+          >
+            <option value="">Seleccionar producto</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.barcode})
+                {availabilityBranchId ? ` — disp: ${stockOf(availabilityBranchId, p.id)}` : ""}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="1"
+            placeholder="Cantidad"
+            value={item.quantity}
+            onChange={(e) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, quantity: e.target.value } : it)))}
+            className={`${inputCls} w-28`}
+          />
+          {items.length > 1 && (
+            <button
+              onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
+              className="text-slate-400 hover:text-red-400 text-sm px-2"
+              aria-label="Quitar producto"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        onClick={() => setItems((prev) => [...prev, { productId: "", quantity: "" }])}
+        className="text-sm text-brand-light hover:underline"
+      >
+        + Agregar otro producto
+      </button>
+    </div>
+  );
 
   const renderProductTable = (items: { product: Product; amount: number }[]) => (
     <div className="overflow-x-auto">
@@ -551,45 +745,21 @@ export default function Inventario() {
               <h4 className="text-white font-medium">
                 {stockAction === "in" ? "Ingresar mercancía" : "Sacar mercancía"}
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <select
-                  value={movementForm.branchId}
-                  onChange={(e) => setMovementForm({ ...movementForm, branchId: e.target.value })}
-                  className={inputCls}
-                >
-                  <option value="">{stockAction === "in" ? "¿A qué punto ingresa?" : "¿De qué punto sale?"}</option>
-                  {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-                <select
-                  value={movementForm.productId}
-                  onChange={(e) => setMovementForm({ ...movementForm, productId: e.target.value })}
-                  className={inputCls}
-                >
-                  <option value="">Seleccionar producto</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.barcode})
-                      {stockAction === "out" && movementForm.branchId
-                        ? ` — disp: ${stockOf(movementForm.branchId, p.id)}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="Cantidad"
-                  value={movementForm.quantity}
-                  onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })}
-                  className={inputCls}
-                />
-              </div>
-              {stockAction === "out" && movementForm.branchId && movementForm.productId && (
-                <p className="text-xs text-slate-400">
-                  Disponible en {branches.find((b) => b.id === movementForm.branchId)?.name}:{" "}
-                  <span className="font-mono text-white">{stockOf(movementForm.branchId, movementForm.productId)}</span>
-                </p>
+              <select
+                value={movementForm.branchId}
+                onChange={(e) => setMovementForm({ ...movementForm, branchId: e.target.value })}
+                className={`${inputCls} w-full md:w-80`}
+              >
+                <option value="">{stockAction === "in" ? "¿A qué punto ingresa?" : "¿De qué punto sale?"}</option>
+                {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+
+              {renderItemRows(
+                movementForm.items,
+                (updater) => setMovementForm((f) => ({ ...f, items: updater(f.items) })),
+                stockAction === "out" ? movementForm.branchId || undefined : undefined,
               )}
+
               <input
                 placeholder="Nota (opcional)"
                 value={movementForm.note}
@@ -633,48 +803,11 @@ export default function Inventario() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                {transferForm.items.map((item, i) => (
-                  <div key={i} className="flex flex-wrap gap-2 items-center">
-                    <select
-                      value={item.productId}
-                      onChange={(e) => updateTransferItem(i, { productId: e.target.value })}
-                      className={`${inputCls} flex-1 min-w-48`}
-                    >
-                      <option value="">Seleccionar producto</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.barcode})
-                          {transferForm.fromBranchId ? ` — disp: ${stockOf(transferForm.fromBranchId, p.id)}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Cantidad"
-                      value={item.quantity}
-                      onChange={(e) => updateTransferItem(i, { quantity: e.target.value })}
-                      className={`${inputCls} w-28`}
-                    />
-                    {transferForm.items.length > 1 && (
-                      <button
-                        onClick={() => setTransferForm((f) => ({ ...f, items: f.items.filter((_, j) => j !== i) }))}
-                        className="text-slate-400 hover:text-red-400 text-sm px-2"
-                        aria-label="Quitar producto"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={() => setTransferForm((f) => ({ ...f, items: [...f.items, { productId: "", quantity: "" }] }))}
-                  className="text-sm text-brand-light hover:underline"
-                >
-                  + Agregar otro producto
-                </button>
-              </div>
+              {renderItemRows(
+                transferForm.items,
+                (updater) => setTransferForm((f) => ({ ...f, items: updater(f.items) })),
+                transferForm.fromBranchId || undefined,
+              )}
 
               <input
                 placeholder="Nota (opcional)"
@@ -730,6 +863,143 @@ export default function Inventario() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {tab === "movimientos" && (
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 className="text-lg font-semibold text-white">Movimientos de inventario</h3>
+            <div className="flex gap-1 bg-slate-900 rounded-lg p-1 w-fit">
+              {(Object.keys(movTypeLabels) as MovType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setMovType(t)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    movType === t ? "bg-brand/20 text-brand-light" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {movTypeLabels[t]}s
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <p className="text-slate-400">Cargando...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-slate-400 border-b border-slate-800">
+                    <th className="pb-3 font-medium">Fecha</th>
+                    <th className="pb-3 font-medium">Producto</th>
+                    <th className="pb-3 font-medium">{movType === "BRANCH_TRANSFER" ? "Origen → Destino" : "Sucursal"}</th>
+                    <th className="pb-3 font-medium text-right">Cantidad</th>
+                    <th className="pb-3 font-medium">Nota</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movementRows.map((row) => (
+                    <tr
+                      key={row.id}
+                      onClick={() => openMovementDetail(row)}
+                      className="border-b border-slate-800/50 cursor-pointer hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="py-3 text-slate-400 whitespace-nowrap">{formatDate(row.createdAt)}</td>
+                      <td className="py-3 text-white">{row.productName}</td>
+                      <td className="py-3 text-slate-400">{row.branchLabel}</td>
+                      <td className="py-3 text-right text-white font-mono">{row.quantity}</td>
+                      <td className="py-3 text-slate-400 max-w-48 truncate">{row.note || "—"}</td>
+                    </tr>
+                  ))}
+                  {movementRows.length === 0 && (
+                    <tr><td colSpan={5} className="py-8 text-center text-slate-500">
+                      No hay movimientos de este tipo
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedMovement && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          onClick={() => setSelectedMovement(null)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-lg space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="text-white font-semibold text-lg">Detalle del movimiento</h4>
+              <button onClick={() => setSelectedMovement(null)} className="text-slate-400 hover:text-white" aria-label="Cerrar">✕</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <span className="text-slate-400">Tipo</span>
+              <span className={`w-fit text-xs px-2 py-0.5 rounded-full ${
+                selectedMovement.type === "STOCK_IN" ? "bg-emerald-900/30 text-emerald-400"
+                : selectedMovement.type === "STOCK_OUT" ? "bg-red-900/30 text-red-400"
+                : "bg-brand/20 text-brand-light"
+              }`}>
+                {movTypeLabels[selectedMovement.type]}
+              </span>
+              <span className="text-slate-400">Fecha</span>
+              <span className="text-white">{formatDate(selectedMovement.createdAt)}</span>
+              <span className="text-slate-400">Producto</span>
+              <span className="text-white">{selectedMovement.productName}</span>
+              <span className="text-slate-400">Código</span>
+              <span className="text-white font-mono text-xs self-center">{selectedMovement.barcode}</span>
+              <span className="text-slate-400">{selectedMovement.type === "BRANCH_TRANSFER" ? "Origen → Destino" : "Sucursal"}</span>
+              <span className="text-white">{selectedMovement.branchLabel}</span>
+            </div>
+
+            {selectedMovement.editable ? (
+              <div className="space-y-3 pt-2 border-t border-slate-800">
+                <div>
+                  <label className="block text-slate-400 text-xs mb-1">Cantidad</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                    className={`${inputCls} w-full`}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Al cambiar la cantidad, el stock se ajusta automáticamente
+                    {selectedMovement.type === "BRANCH_TRANSFER" ? " en ambas sedes." : "."}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-xs mb-1">Nota</label>
+                  <input
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    placeholder="Sin nota"
+                    className={`${inputCls} w-full`}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveMovement}
+                    disabled={saving}
+                    className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                  >
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                  <button onClick={() => setSelectedMovement(null)} className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <p className="pt-2 border-t border-slate-800 text-xs text-slate-500">
+                Este movimiento no se puede editar (transferencia antigua sin vínculo entre sus dos lados).
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
