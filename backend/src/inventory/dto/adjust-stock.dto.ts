@@ -1,0 +1,31 @@
+import {
+  IsString,
+  IsInt,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  Min,
+} from 'class-validator';
+import { InventoryMovementType } from '@prisma/client';
+
+export class AdjustStockDto {
+  @IsString()
+  @IsNotEmpty()
+  productId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  branchId: string;
+
+  @IsInt()
+  @Min(1)
+  @IsNotEmpty()
+  quantity: number;
+
+  @IsEnum(InventoryMovementType)
+  type: InventoryMovementType;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
+}
