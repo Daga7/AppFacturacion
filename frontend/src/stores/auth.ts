@@ -5,6 +5,8 @@ interface User {
   id: string;
   username: string;
   role: string;
+  branchId: string;
+  branchName: string;
 }
 
 interface LoginResponse {

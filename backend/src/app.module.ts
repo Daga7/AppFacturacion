@@ -8,6 +8,8 @@ import { InventoryModule } from './inventory/inventory.module';
 import { SalesModule } from './sales/sales.module';
 import { ReportsModule } from './reports/reports.module';
 import { BranchesModule } from './branches/branches.module';
+import { CustomersModule } from './customers/customers.module';
+import { LoansModule } from './loans/loans.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -19,6 +21,8 @@ import { AuthModule } from './auth/auth.module';
     SalesModule,
     ReportsModule,
     BranchesModule,
+    CustomersModule,
+    LoansModule,
     AuthModule,
   ],
   controllers: [AppController],

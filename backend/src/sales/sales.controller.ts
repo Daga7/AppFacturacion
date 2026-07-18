@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -11,7 +12,9 @@ import {
 import type { Request as ExpressRequest } from 'express';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
+import { UpdateSaleDto } from './dto/update-sale.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
 interface RequestWithUser extends ExpressRequest {
   user: { id: string; username: string; role: string };
@@ -31,13 +34,22 @@ export class SalesController {
   findAll(
     @Query('branchId') branchId?: string,
     @Query('limit') limit?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    return this.salesService.findAll(branchId, limit ? +limit : 50);
+    return this.salesService.findAll(branchId, limit ? +limit : 50, from, to);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.salesService.findOne(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateSaleDto) {
+    return this.salesService.update(id, dto);
   }
 
   @Post(':id/cancel')

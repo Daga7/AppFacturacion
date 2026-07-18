@@ -14,6 +14,7 @@ export class AuthService {
   async login(username: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: { username },
+      include: { branch: true },
     });
 
     if (!user) {
@@ -30,14 +31,20 @@ export class AuthService {
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: { id: user.id, username: user.username, role: user.role },
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        branchId: user.branchId,
+        branchName: user.branch.name,
+      },
     };
   }
 
   async refresh(refreshToken: string) {
     const stored = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { user: true },
+      include: { user: { include: { branch: true } } },
     });
 
     if (!stored || stored.expiresAt < new Date()) {
@@ -55,6 +62,8 @@ export class AuthService {
         id: stored.user.id,
         username: stored.user.username,
         role: stored.user.role,
+        branchId: stored.user.branchId,
+        branchName: stored.user.branch.name,
       },
     };
   }
