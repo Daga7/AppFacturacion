@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventario from "./pages/Inventario";
 import Facturacion from "./pages/Facturacion";
 import Informes from "./pages/Informes";
+import Caja from "./pages/Caja";
 import Layout from "./components/Layout";
 import { useAuthStore } from "./stores/auth";
 
@@ -34,6 +35,7 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/caja" element={<Caja />} />
           <Route path="/inventario" element={<Inventario />} />
           <Route path="/facturacion" element={<Facturacion />} />
           <Route path="/informes" element={<Informes />} />

@@ -35,7 +35,10 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate("/dashboard", { replace: true });
+    // El cajero entra directo a su pantalla de caja; los demás al dashboard.
+    if (user) {
+      navigate(user.role === "CASHIER" ? "/caja" : "/dashboard", { replace: true });
+    }
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {

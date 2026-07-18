@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth";
 import { APP_NAME } from "../lib/constants";
 
-const navItems = [
+const baseNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: "◉" },
   { to: "/inventario", label: "Inventario", icon: "⊞" },
   { to: "/facturacion", label: "Facturación", icon: "⊡" },
@@ -13,6 +13,11 @@ const navItems = [
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
+  // El cajero tiene además su pantalla de caja (abrir/vender/cerrar).
+  const navItems =
+    user?.role === "CASHIER"
+      ? [{ to: "/caja", label: "Caja", icon: "▣" }, ...baseNavItems]
+      : baseNavItems;
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 

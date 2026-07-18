@@ -846,36 +846,49 @@ export default function Inventario() {
           {loading ? (
             <p className="text-slate-400">Cargando...</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-slate-400 border-b border-slate-800">
-                    <th className="pb-3 font-medium">Producto</th>
-                    <th className="pb-3 font-medium">Categoría</th>
-                    <th className="pb-3 font-medium">Sucursal</th>
-                    <th className="pb-3 font-medium text-right">Cantidad</th>
-                    <th className="pb-3 font-medium">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stock.map((s) => (
-                    <tr key={s.id} className="border-b border-slate-800/50">
-                      <td className="py-3 text-white">{s.product.name}</td>
-                      <td className="py-3 text-slate-400">{s.product.category.name}</td>
-                      <td className="py-3 text-slate-400">{s.branch.name}</td>
-                      <td className="py-3 text-right text-white font-mono">{s.amount}</td>
-                      <td className="py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${s.amount > 5 ? "bg-emerald-900/30 text-emerald-400" : s.amount > 0 ? "bg-yellow-900/30 text-yellow-400" : "bg-red-900/30 text-red-400"}`}>
-                          {s.amount > 5 ? "En stock" : s.amount > 0 ? "Stock bajo" : "Agotado"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {stock.length === 0 && (
-                    <tr><td colSpan={5} className="py-8 text-center text-slate-500">No hay inventario registrado</td></tr>
-                  )}
-                </tbody>
-              </table>
+            // Estado de inventario dividido por sede (Aguachica primero, en el
+            // orden alfabético que devuelve /branches), igual que en Productos.
+            <div className="space-y-8">
+              {branches.map((b) => {
+                const items = stock.filter((s) => s.branch.id === b.id);
+                return (
+                  <div key={b.id}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-white font-semibold">{b.name}</h4>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{items.length}</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-slate-400 border-b border-slate-800">
+                            <th className="pb-3 font-medium">Producto</th>
+                            <th className="pb-3 font-medium">Categoría</th>
+                            <th className="pb-3 font-medium text-right">Cantidad</th>
+                            <th className="pb-3 font-medium">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((s) => (
+                            <tr key={s.id} className="border-b border-slate-800/50">
+                              <td className="py-3 text-white">{s.product.name}</td>
+                              <td className="py-3 text-slate-400">{s.product.category.name}</td>
+                              <td className="py-3 text-right text-white font-mono">{s.amount}</td>
+                              <td className="py-3">
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${s.amount > 5 ? "bg-emerald-900/30 text-emerald-400" : s.amount > 0 ? "bg-yellow-900/30 text-yellow-400" : "bg-red-900/30 text-red-400"}`}>
+                                  {s.amount > 5 ? "En stock" : s.amount > 0 ? "Stock bajo" : "Agotado"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          {items.length === 0 && (
+                            <tr><td colSpan={4} className="py-6 text-center text-slate-500">No hay inventario en esta sede</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
