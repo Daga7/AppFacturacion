@@ -13,10 +13,11 @@ const baseNavItems = [
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  // El cajero tiene además su pantalla de caja (abrir/vender/cerrar).
+  // El cajero solo ve su módulo de caja; a facturación llega desde la
+  // tarjeta "Registrar ventas".
   const navItems =
     user?.role === "CASHIER"
-      ? [{ to: "/caja", label: "Caja", icon: "▣" }, ...baseNavItems]
+      ? [{ to: "/caja", label: "Caja", icon: "▣" }]
       : baseNavItems;
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();

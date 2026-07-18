@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
 
 interface RequestWithUser extends ExpressRequest {
-  user: { id: string; username: string; role: string };
+  user: { id: string; username: string; role: string; branchId: string };
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,6 +28,11 @@ export class SalesController {
   @Roles('ADMIN', 'CASHIER')
   @Post()
   create(@Body() dto: CreateSaleDto, @Request() req: RequestWithUser) {
+    // Un cajero solo puede vender en su propia sede, sin importar lo que
+    // envíe el cliente.
+    if (req.user.role === 'CASHIER') {
+      dto.branchId = req.user.branchId;
+    }
     return this.salesService.create(dto, req.user.id);
   }
 

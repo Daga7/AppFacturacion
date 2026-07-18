@@ -34,10 +34,15 @@ export default function Facturacion() {
   // El supervisor solo consulta: ve ventas y pendientes de ambas sedes, sin
   // registrar ni editar nada (el backend también se lo impide).
   const isSupervisor = user?.role === "SUPERVISOR";
+  // El cajero trabaja únicamente en su propia sede: sin selector.
+  const isCashier = user?.role === "CASHIER";
   const selectedBranchId = useBranchStore((s) => s.branchId);
   const setSelectedBranchId = useBranchStore((s) => s.setBranchId);
-  // Sede activa: la elegida en el selector superior, o la del usuario.
-  const branchId = selectedBranchId ?? user?.branchId ?? "";
+  // Sede activa: la del cajero siempre; para los demás, la elegida en el
+  // selector superior o la propia por defecto.
+  const branchId = isCashier
+    ? user?.branchId ?? ""
+    : selectedBranchId ?? user?.branchId ?? "";
 
   const [tab, setTab] = useState<Tab>(isSupervisor ? "ventas" : "facturacion");
   const [products, setProducts] = useState<Product[]>([]);
@@ -135,7 +140,11 @@ export default function Facturacion() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-2xl font-bold text-white">Facturación</h2>
-        <BranchSelector branches={branches} value={branchId} onChange={setSelectedBranchId} />
+        {isCashier ? (
+          <span className="text-sm text-slate-400">{user?.branchName}</span>
+        ) : (
+          <BranchSelector branches={branches} value={branchId} onChange={setSelectedBranchId} />
+        )}
       </div>
 
       {error && <Alert kind="error" message={error} onClose={() => setError(null)} />}
