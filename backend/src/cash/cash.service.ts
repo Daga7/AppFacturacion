@@ -4,15 +4,53 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 const SESSION_INCLUDE = {
   branch: true,
   openedBy: { select: { id: true, username: true } },
 } as const;
 
+// Forma del resumen de cierre (los Decimal llegan como string tras serializar).
+export interface CashSummaryData {
+  session: {
+    id: string;
+    openingAmount: number | string;
+    closingAmount: number | string | null;
+    status: string;
+    branch: { id: string; name: string };
+    openedBy: { id: string; username: string } | null;
+    openedAt: string;
+    closedAt: string | null;
+  };
+  salesCount: number;
+  totalSales: number;
+  cashReceived: number;
+  nequiReceived: number;
+  bancolombiaReceived: number;
+  transferReceived: number;
+  loans: { count: number; total: number };
+  discounts: { count: number; total: number };
+  expectedCash: number;
+  difference: number | null;
+}
+
+const money = (n: number | string) =>
+  `$${Number(n).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
+
+const nowBogota = () =>
+  new Date().toLocaleString('es-CO', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  });
+
 @Injectable()
 export class CashService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegram: TelegramService,
+  ) {}
 
   // Caja abierta actual de la sucursal (o null si no hay).
   async current(branchId: string) {
@@ -42,6 +80,19 @@ export class CashService {
       data: { branchId, openingAmount, openedById: userId },
       include: SESSION_INCLUDE,
     });
+
+    // Aviso por Telegram a los chats autorizados (best-effort, no bloquea).
+    void this.telegram.notifyStaff(
+      branch.name,
+      [
+        '🔓 APERTURA DE CAJA',
+        `Sede: ${branch.name}`,
+        `Abierta por: ${session.openedBy.username}`,
+        `Base inicial: ${money(openingAmount)}`,
+        `Fecha y hora: ${nowBogota()}`,
+      ].join('\n'),
+    );
+
     return JSON.parse(JSON.stringify(session)) as typeof session;
   }
 
@@ -60,7 +111,38 @@ export class CashService {
       data: { closingAmount, status: 'CLOSED', closedAt: new Date() },
     });
 
-    return this.summary(session.id);
+    const summary = await this.summary(session.id);
+
+    // Informe de cierre por Telegram: el mismo resumen que genera el programa.
+    const diff = summary.difference ?? 0;
+    const diffLine =
+      diff === 0
+        ? 'Cuadra exacto ✓'
+        : diff > 0
+          ? `Sobran ${money(diff)}`
+          : `Faltan ${money(-diff)}`;
+    void this.telegram.notifyStaff(
+      summary.session.branch.name,
+      [
+        '🔒 CIERRE DE CAJA',
+        `Sede: ${summary.session.branch.name}`,
+        `Fecha y hora: ${nowBogota()}`,
+        `Turno abierto por: ${summary.session.openedBy?.username ?? '—'}`,
+        '—————————————',
+        `Base inicial: ${money(summary.session.openingAmount)}`,
+        `Ventas del día: ${summary.salesCount} por ${money(summary.totalSales)}`,
+        `Efectivo recibido: ${money(summary.cashReceived)}`,
+        `Transferencias: ${money(summary.transferReceived)} (Nequi ${money(summary.nequiReceived)} · Bancolombia ${money(summary.bancolombiaReceived)})`,
+        `Préstamos: ${summary.loans.count} por ${money(summary.loans.total)}`,
+        `Descuentos: ${summary.discounts.count} por ${money(summary.discounts.total)}`,
+        '—————————————',
+        `Efectivo esperado: ${money(summary.expectedCash)}`,
+        `Efectivo contado: ${money(summary.session.closingAmount ?? 0)}`,
+        `Diferencia: ${diffLine}`,
+      ].join('\n'),
+    );
+
+    return summary;
   }
 
   // Resumen del turno: base, efectivo contado, ventas, medios de pago,
@@ -148,7 +230,7 @@ export class CashService {
         difference:
           closingAmount !== null ? round(closingAmount - expectedCash) : null,
       }),
-    ) as Record<string, unknown>;
+    ) as CashSummaryData;
   }
 
   // Detalle de los descuentos aplicados durante el turno.

@@ -50,9 +50,20 @@ peticiones que no traigan el header `X-Telegram-Bot-Api-Secret-Token`
 correcto (Telegram lo envía automáticamente al registrarlo con
 `secret_token`).
 
-## Siguiente paso natural
+## Notificaciones automáticas de caja
 
-Con el `chat_id` guardado, el backend puede enviar notificaciones con
-`TelegramService.sendMessage(chatId, texto)` (ya exportado por el módulo):
-por ejemplo el resumen del cierre de caja de cada sede, alertas de stock
-bajo, o el aviso de un préstamo nuevo.
+Con el bot configurado, el sistema envía automáticamente a los **chats
+autorizados** (usuarios ADMIN y SUPERVISOR con Telegram vinculado):
+
+- **🔓 Apertura de caja**: sede, quién la abrió, base inicial, fecha y hora.
+- **🔒 Cierre de caja**: sede, fecha/hora y el informe completo del programa
+  (base, ventas, efectivo, transferencias con desglose, préstamos,
+  descuentos, efectivo esperado vs contado y diferencia).
+
+Los envíos son *best-effort*: si Telegram falla, la operación de caja no se
+ve afectada. Las horas se muestran en zona `America/Bogota`.
+
+Si algún día se quiere un bot distinto por sede, el código ya lo soporta:
+basta definir `TELEGRAM_BOT_TOKEN_OCANA` / `TELEGRAM_BOT_TOKEN_AGUACHICA`
+(sin tildes) y esos bots se usarán para su sede; `TELEGRAM_BOT_TOKEN` queda
+como bot por defecto.

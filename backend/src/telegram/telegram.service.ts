@@ -67,12 +67,58 @@ export class TelegramService {
     return { message: 'Telegram desvinculado' };
   }
 
-  // Webhook público que recibe los mensajes que le llegan al bot.
-  async handleWebhook(update: TelegramUpdate, secretHeader?: string) {
+  // Clave de sede para variables de entorno: "Ocaña" -> "OCANA".
+  private branchKey(name: string) {
+    return name
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase();
+  }
+
+  // Token del bot a usar: el específico de la sede si existe
+  // (TELEGRAM_BOT_TOKEN_OCANA, TELEGRAM_BOT_TOKEN_AGUACHICA...), o el global.
+  tokenFor(branchName?: string | null, botKey?: string | null) {
+    const key = botKey
+      ? this.branchKey(botKey)
+      : branchName
+        ? this.branchKey(branchName)
+        : null;
+    if (key) {
+      const specific = process.env[`TELEGRAM_BOT_TOKEN_${key}`];
+      if (specific) return specific;
+    }
+    return process.env.TELEGRAM_BOT_TOKEN;
+  }
+
+  // Notifica a los chats autorizados: usuarios ADMIN y SUPERVISOR que hayan
+  // vinculado su Telegram. Usa el bot de la sede si está configurado.
+  async notifyStaff(branchName: string, text: string) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        telegramChatId: { not: null },
+        role: { in: ['ADMIN', 'SUPERVISOR'] },
+      },
+    });
+    const token = this.tokenFor(branchName);
+    await Promise.allSettled(
+      users.map((u) => this.sendMessage(u.telegramChatId!, text, token)),
+    );
+    return { recipients: users.length };
+  }
+
+  // Webhook público que recibe los mensajes que le llegan al bot. `botKey`
+  // identifica al bot cuando hay uno por sede (webhook/ocana, webhook/aguachica).
+  async handleWebhook(
+    update: TelegramUpdate,
+    secretHeader?: string,
+    botKey?: string,
+  ) {
     // Si hay secreto configurado, ignorar peticiones que no lo traigan.
     const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
     if (secret && secretHeader !== secret) return { ok: true };
 
+    const replyToken = this.tokenFor(null, botKey);
     const text = update?.message?.text;
     const chatId = update?.message?.chat?.id;
     if (!text || chatId === undefined) return { ok: true };
@@ -85,6 +131,7 @@ export class TelegramService {
         await this.sendMessage(
           chatId,
           'Para vincular tu cuenta, genera un código en la app y envíame: /vincular TG-XXXXXX',
+          replyToken,
         );
       }
       return { ok: true };
@@ -103,6 +150,7 @@ export class TelegramService {
       await this.sendMessage(
         chatId,
         'Código inválido o vencido. Genera uno nuevo desde la app e inténtalo de nuevo.',
+        replyToken,
       );
       return { ok: true };
     }
@@ -120,22 +168,28 @@ export class TelegramService {
     await this.sendMessage(
       chatId,
       `✅ Telegram vinculado correctamente a la cuenta "${user.username}".`,
+      replyToken,
     );
     return { ok: true };
   }
 
   // Envía un mensaje por el bot; si no hay token configurado, no hace nada.
-  async sendMessage(chatId: number | string, text: string) {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    if (!token) return;
+  async sendMessage(
+    chatId: number | string,
+    text: string,
+    token = process.env.TELEGRAM_BOT_TOKEN,
+  ) {
+    if (!token) return false;
     try {
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text }),
       });
+      return true;
     } catch {
-      // La vinculación ya quedó guardada; el mensaje de confirmación es best-effort.
+      // El envío es best-effort: nunca debe romper la operación principal.
+      return false;
     }
   }
 }
