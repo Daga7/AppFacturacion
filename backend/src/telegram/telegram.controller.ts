@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
+  Param,
   Body,
   Headers,
   UseGuards,
@@ -32,9 +34,9 @@ export class TelegramController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('unlink')
-  unlink(@Request() req: RequestWithUser) {
-    return this.telegramService.unlink(req.user.id);
+  @Delete('links/:id')
+  unlink(@Param('id') id: string, @Request() req: RequestWithUser) {
+    return this.telegramService.unlink(req.user.id, id);
   }
 
   // Endpoint público al que Telegram envía los mensajes del bot.

@@ -1,20 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
-// Vinculación de cuentas con Telegram:
+// Vinculación de cuentas con Telegram (varios chats por usuario):
 // 1. El usuario genera un código único en la app (vence en 15 minutos).
 // 2. Abre el bot y envía: /vincular TG-XXXXXX
-// 3. Telegram llama al webhook; se valida el código, se guarda el chat_id en
-//    la cuenta y queda verificado. Nadie puede vincularse sin acceso al sistema.
+// 3. Telegram llama al webhook; se valida el código, se guarda el chat como
+//    un TelegramLink de la cuenta y queda verificado. Para vincular otro
+//    dispositivo/chat se genera un código nuevo.
 
 const CODE_TTL_MS = 15 * 60 * 1000;
+const MAX_LINKS_PER_USER = 5;
 
 interface TelegramUpdate {
   message?: {
     text?: string;
-    chat?: { id?: number | string };
-    from?: { username?: string };
+    chat?: { id?: number | string; title?: string; first_name?: string };
+    from?: { username?: string; first_name?: string };
   };
 }
 
@@ -27,6 +33,13 @@ export class TelegramService {
   }
 
   async createLinkCode(userId: string) {
+    const count = await this.prisma.telegramLink.count({ where: { userId } });
+    if (count >= MAX_LINKS_PER_USER) {
+      throw new BadRequestException(
+        `Ya tienes ${MAX_LINKS_PER_USER} chats vinculados; desvincula alguno para agregar otro`,
+      );
+    }
+
     const code = this.generateCode();
     await this.prisma.user.update({
       where: { id: userId },
@@ -44,27 +57,34 @@ export class TelegramService {
   }
 
   async status(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { telegramLinks: { orderBy: { createdAt: 'asc' } } },
+    });
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return {
-      linked: Boolean(user.telegramChatId),
-      chatId: user.telegramChatId,
-      verifiedAt: user.telegramVerifiedAt?.toISOString() ?? null,
+      linked: user.telegramLinks.length > 0,
+      links: user.telegramLinks.map((l) => ({
+        id: l.id,
+        chatId: l.chatId,
+        label: l.label,
+        verifiedAt: l.verifiedAt.toISOString(),
+      })),
+      maxLinks: MAX_LINKS_PER_USER,
       pendingCode: user.telegramLinkCode,
     };
   }
 
-  async unlink(userId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        telegramChatId: null,
-        telegramVerifiedAt: null,
-        telegramLinkCode: null,
-        telegramLinkExpires: null,
-      },
+  // Desvincula un chat específico del usuario.
+  async unlink(userId: string, linkId: string) {
+    const link = await this.prisma.telegramLink.findUnique({
+      where: { id: linkId },
     });
-    return { message: 'Telegram desvinculado' };
+    if (!link || link.userId !== userId) {
+      throw new NotFoundException('Vínculo no encontrado');
+    }
+    await this.prisma.telegramLink.delete({ where: { id: linkId } });
+    return { message: 'Chat desvinculado' };
   }
 
   // Clave de sede para variables de entorno: "Ocaña" -> "OCANA".
@@ -77,7 +97,7 @@ export class TelegramService {
   }
 
   // Token del bot a usar: el específico de la sede si existe
-  // (TELEGRAM_BOT_TOKEN_OCANA, TELEGRAM_BOT_TOKEN_AGUACHICA...), o el global.
+  // (TELEGRAM_BOT_TOKEN_OCANA...), o el global.
   tokenFor(branchName?: string | null, botKey?: string | null) {
     const key = botKey
       ? this.branchKey(botKey)
@@ -91,24 +111,22 @@ export class TelegramService {
     return process.env.TELEGRAM_BOT_TOKEN;
   }
 
-  // Notifica a los chats autorizados: usuarios ADMIN y SUPERVISOR que hayan
-  // vinculado su Telegram. Usa el bot de la sede si está configurado.
+  // Notifica a los chats autorizados: todos los vínculos de usuarios ADMIN y
+  // SUPERVISOR, sin repetir chats.
   async notifyStaff(branchName: string, text: string) {
-    const users = await this.prisma.user.findMany({
-      where: {
-        telegramChatId: { not: null },
-        role: { in: ['ADMIN', 'SUPERVISOR'] },
-      },
+    const links = await this.prisma.telegramLink.findMany({
+      where: { user: { role: { in: ['ADMIN', 'SUPERVISOR'] } } },
     });
+    const chatIds = [...new Set(links.map((l) => l.chatId))];
     const token = this.tokenFor(branchName);
     await Promise.allSettled(
-      users.map((u) => this.sendMessage(u.telegramChatId!, text, token)),
+      chatIds.map((chatId) => this.sendMessage(chatId, text, token)),
     );
-    return { recipients: users.length };
+    return { recipients: chatIds.length };
   }
 
   // Webhook público que recibe los mensajes que le llegan al bot. `botKey`
-  // identifica al bot cuando hay uno por sede (webhook/ocana, webhook/aguachica).
+  // identifica al bot cuando hay uno por sede.
   async handleWebhook(
     update: TelegramUpdate,
     secretHeader?: string,
@@ -140,6 +158,7 @@ export class TelegramService {
     const code = match[1].toUpperCase();
     const user = await this.prisma.user.findFirst({
       where: { telegramLinkCode: code },
+      include: { telegramLinks: true },
     });
 
     if (
@@ -155,19 +174,40 @@ export class TelegramService {
       return { ok: true };
     }
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        telegramChatId: String(chatId),
-        telegramVerifiedAt: new Date(),
-        telegramLinkCode: null,
-        telegramLinkExpires: null,
-      },
-    });
+    const alreadyLinked = user.telegramLinks.some(
+      (l) => l.chatId === String(chatId),
+    );
+    if (!alreadyLinked && user.telegramLinks.length >= MAX_LINKS_PER_USER) {
+      await this.sendMessage(
+        chatId,
+        `La cuenta "${user.username}" ya tiene ${MAX_LINKS_PER_USER} chats vinculados; desvincula alguno desde la app.`,
+        replyToken,
+      );
+      return { ok: true };
+    }
 
+    const label =
+      update.message?.from?.username ??
+      update.message?.from?.first_name ??
+      update.message?.chat?.title ??
+      null;
+
+    await this.prisma.$transaction([
+      this.prisma.telegramLink.upsert({
+        where: { userId_chatId: { userId: user.id, chatId: String(chatId) } },
+        create: { userId: user.id, chatId: String(chatId), label },
+        update: { label, verifiedAt: new Date() },
+      }),
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { telegramLinkCode: null, telegramLinkExpires: null },
+      }),
+    ]);
+
+    const total = user.telegramLinks.length + (alreadyLinked ? 0 : 1);
     await this.sendMessage(
       chatId,
-      `✅ Telegram vinculado correctamente a la cuenta "${user.username}".`,
+      `✅ Telegram vinculado correctamente a la cuenta "${user.username}" (${total} de ${MAX_LINKS_PER_USER} chats).`,
       replyToken,
     );
     return { ok: true };

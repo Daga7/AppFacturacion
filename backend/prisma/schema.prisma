@@ -94,18 +94,34 @@ model User {
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
-  // Vinculación con Telegram: el usuario genera un código en la app y lo
-  // envía al bot con /vincular; el webhook guarda el chat y lo verifica.
-  telegramChatId      String?
+  // Código pendiente de vinculación con Telegram (un chat a la vez; los
+  // chats ya vinculados viven en TelegramLink).
   telegramLinkCode    String?   @unique
   telegramLinkExpires DateTime?
-  telegramVerifiedAt  DateTime?
+
+  telegramLinks TelegramLink[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   sales         Sale[]
   refreshTokens RefreshToken[]
   cashSessions  CashSession[]
+}
+
+// Chats de Telegram vinculados a una cuenta (varios por usuario). Se crean
+// solo a través del webhook con un código válido.
+model TelegramLink {
+  id     String  @id @default(uuid())
+  chatId String
+  label  String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  verifiedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, chatId])
 }
 
 model Customer {

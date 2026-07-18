@@ -4,12 +4,20 @@ import { formatDateTime } from "../lib/format";
 import { Card } from "../components/ui/Card";
 import { Alert } from "../components/ui/Alert";
 import { StatusBadge } from "../components/ui/StatusBadge";
-import { primaryBtnCls, secondaryBtnCls, ghostBtnCls } from "../components/ui/inputs";
+import { EmptyState } from "../components/ui/EmptyState";
+import { primaryBtnCls, ghostBtnCls } from "../components/ui/inputs";
+
+interface TgLink {
+  id: string;
+  chatId: string;
+  label?: string | null;
+  verifiedAt: string;
+}
 
 interface TgStatus {
   linked: boolean;
-  chatId?: string | null;
-  verifiedAt?: string | null;
+  links: TgLink[];
+  maxLinks: number;
   pendingCode?: string | null;
 }
 
@@ -20,9 +28,8 @@ interface LinkCode {
   botUsername: string | null;
 }
 
-// Vinculación de la cuenta con Telegram mediante código único: el usuario lo
-// genera aquí y se lo envía al bot con /vincular; el backend verifica y guarda
-// el chat. Así nadie puede vincularse sin acceso al sistema.
+// Vinculación de la cuenta con Telegram: se pueden vincular varios chats
+// (hasta el máximo que indique el backend), cada uno con su propio código.
 export default function Telegram() {
   const [status, setStatus] = useState<TgStatus | null>(null);
   const [linkCode, setLinkCode] = useState<LinkCode | null>(null);
@@ -47,28 +54,37 @@ export default function Telegram() {
     setError(null);
     try {
       setLinkCode(await api.post<LinkCode>("/telegram/link-code"));
-    } catch { setError("Error al generar el código"); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al generar el código");
+    }
     setSaving(false);
   };
 
   const verify = async () => {
     setSaving(true);
     await loadStatus();
+    const fresh = await api.get<TgStatus>("/telegram/status").catch(() => null);
+    if (fresh && !fresh.pendingCode) {
+      setLinkCode(null);
+      setSuccess("¡Chat vinculado!");
+      setStatus(fresh);
+    }
     setSaving(false);
-    setSuccess(null);
   };
 
-  const unlink = async () => {
-    if (!confirm("¿Desvincular Telegram de tu cuenta?")) return;
+  const unlink = async (link: TgLink) => {
+    if (!confirm(`¿Desvincular el chat ${link.label ?? link.chatId}?`)) return;
     setSaving(true);
     try {
-      await api.post("/telegram/unlink");
-      setLinkCode(null);
-      setSuccess("Telegram desvinculado");
+      await api.delete(`/telegram/links/${link.id}`);
+      setSuccess("Chat desvinculado");
       await loadStatus();
     } catch { setError("Error al desvincular"); }
     setSaving(false);
   };
+
+  const links = status?.links ?? [];
+  const maxLinks = status?.maxLinks ?? 5;
 
   return (
     <div className="max-w-2xl">
@@ -79,37 +95,47 @@ export default function Telegram() {
 
       {loading ? (
         <p className="text-slate-400">Cargando...</p>
-      ) : status?.linked ? (
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <StatusBadge tone="success">Vinculado y verificado</StatusBadge>
-          </div>
-          <div className="text-sm space-y-1">
-            <p className="text-slate-400">
-              Chat vinculado: <span className="text-white font-mono">{status.chatId}</span>
-            </p>
-            {status.verifiedAt && (
-              <p className="text-slate-400">
-                Verificado el <span className="text-white">{formatDateTime(status.verifiedAt)}</span>
-              </p>
-            )}
-          </div>
-          <button onClick={unlink} disabled={saving} className={secondaryBtnCls}>
-            Desvincular
-          </button>
-        </Card>
       ) : (
         <div className="space-y-4">
           <Card className="p-6 space-y-3">
-            <p className="text-white font-medium">Conecta tu cuenta con el bot de Telegram</p>
-            <p className="text-sm text-slate-400">
-              Genera un código único, envíaselo al bot y tu cuenta quedará
-              vinculada y verificada. El código vence en 15 minutos y solo
-              funciona una vez.
-            </p>
-            <button onClick={generateCode} disabled={saving} className={primaryBtnCls}>
-              {saving ? "Generando..." : linkCode ? "Generar otro código" : "Generar código"}
-            </button>
+            <div className="flex items-center justify-between">
+              <p className="text-white font-medium">Chats vinculados</p>
+              <StatusBadge tone={links.length > 0 ? "success" : "neutral"}>
+                {links.length} de {maxLinks}
+              </StatusBadge>
+            </div>
+
+            {links.length === 0 ? (
+              <EmptyState message="Aún no hay chats vinculados" />
+            ) : (
+              <div className="space-y-2">
+                {links.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between gap-3 border border-slate-800 rounded-lg p-3">
+                    <div className="min-w-0 text-sm">
+                      <p className="text-white font-medium truncate">
+                        {l.label ? `@${l.label}` : `Chat ${l.chatId}`}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        ID {l.chatId} · verificado {formatDateTime(l.verifiedAt)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => unlink(l)}
+                      disabled={saving}
+                      className="text-xs text-slate-400 hover:text-red-400 shrink-0"
+                    >
+                      Desvincular
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {links.length < maxLinks && (
+              <button onClick={generateCode} disabled={saving} className={primaryBtnCls}>
+                {saving ? "Generando..." : links.length > 0 ? "Vincular otro chat" : "Generar código"}
+              </button>
+            )}
           </Card>
 
           {linkCode && (
@@ -126,6 +152,7 @@ export default function Telegram() {
                   ) : (
                     " (el bot del negocio)"
                   )}
+                  {" "}desde el dispositivo o chat que quieres vincular
                 </li>
                 <li>
                   Envíale este mensaje:{" "}
@@ -136,7 +163,7 @@ export default function Telegram() {
                 <li>Vuelve aquí y pulsa "Verificar vinculación".</li>
               </ol>
               <p className="text-xs text-slate-500">
-                El código vence en {linkCode.expiresInMinutes} minutos.
+                El código vence en {linkCode.expiresInMinutes} minutos y sirve para un solo chat.
               </p>
               <button onClick={verify} disabled={saving} className={ghostBtnCls}>
                 {saving ? "Verificando..." : "Verificar vinculación"}
