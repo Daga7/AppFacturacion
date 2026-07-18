@@ -41,6 +41,7 @@ export function SaleDetailModal({
     setLines(
       sale.details.map((d) => ({
         productId: d.productId,
+        barcode: d.product?.barcode ?? "",
         quantity: String(d.quantity),
         unitPrice: String(d.unitPrice),
         discount: String(d.discount),

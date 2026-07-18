@@ -111,12 +111,6 @@ export function LoanDetailModal({ loan, onClose, onChanged }: LoanDetailModalPro
                 <option key={m} value={m}>{paymentMethodLabels[m]}</option>
               ))}
             </select>
-            <button
-              onClick={() => setAmount(String(pending))}
-              className="text-xs text-brand-light hover:underline"
-            >
-              Pagar todo
-            </button>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button onClick={handlePayment} disabled={saving} className={primaryBtnCls}>

@@ -9,16 +9,10 @@ interface CustomerFormProps {
   onSaved: (customer: Customer) => void;
 }
 
-const empty = { firstName: "", lastName: "", phone: "", address: "", type: "REGULAR" as const };
+const empty = { firstName: "", lastName: "", phone: "", address: "" };
 
 export function CustomerForm({ branchId, onSaved }: CustomerFormProps) {
-  const [form, setForm] = useState<{
-    firstName: string;
-    lastName: string;
-    phone: string;
-    address: string;
-    type: "REGULAR" | "SPECIAL";
-  }>(empty);
+  const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +26,8 @@ export function CustomerForm({ branchId, onSaved }: CustomerFormProps) {
         lastName: form.lastName.trim() || undefined,
         phone: form.phone.trim() || undefined,
         address: form.address.trim() || undefined,
-        type: form.type,
+        // Todo cliente que puede pedir préstamo se registra como especial.
+        type: "SPECIAL",
         branchId,
       });
       setForm(empty);
@@ -51,10 +46,6 @@ export function CustomerForm({ branchId, onSaved }: CustomerFormProps) {
         <input placeholder="Apellido (opcional)" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={inputCls} />
         <input placeholder="Teléfono" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputCls} />
         <input placeholder="Dirección" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
-        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "REGULAR" | "SPECIAL" })} className={inputCls}>
-          <option value="REGULAR">Cliente regular</option>
-          <option value="SPECIAL">Cliente especial</option>
-        </select>
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
       <button onClick={handleSubmit} disabled={saving} className={ghostBtnCls}>

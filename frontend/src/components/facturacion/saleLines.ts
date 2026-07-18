@@ -3,6 +3,7 @@
 
 export interface SaleLine {
   productId: string;
+  barcode: string;
   quantity: string;
   unitPrice: string;
   discount: string;
@@ -10,6 +11,7 @@ export interface SaleLine {
 
 export const emptySaleLine = (): SaleLine => ({
   productId: "",
+  barcode: "",
   quantity: "1",
   unitPrice: "",
   discount: "0",
