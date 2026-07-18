@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
 import { useBranchStore } from "../stores/branch";
 import { BranchSelector } from "../components/BranchSelector";
+import { Card } from "../components/ui/Card";
 import type { BranchInfo, Customer, Loan, Product, Sale } from "../lib/types";
 import { invoiceCode } from "../lib/format";
 import { TabPills } from "../components/ui/TabPills";
@@ -60,6 +62,18 @@ export default function Facturacion() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Estado de la caja del cajero: sin caja abierta no puede vender ni prestar.
+  const navigate = useNavigate();
+  const [cashOpen, setCashOpen] = useState<boolean | null>(null);
+
+  const loadCashState = useCallback(async () => {
+    if (!isCashier) return;
+    try {
+      const session = await api.get<{ id: string } | null>("/cash/current");
+      setCashOpen(session !== null);
+    } catch { setCashOpen(false); }
+  }, [isCashier]);
+
   const loadProducts = useCallback(async () => {
     try {
       setProducts(await api.get<Product[]>("/products"));
@@ -101,7 +115,8 @@ export default function Facturacion() {
   useEffect(() => {
     loadProducts();
     loadBranches();
-  }, [loadProducts, loadBranches]);
+    loadCashState();
+  }, [loadProducts, loadBranches, loadCashState]);
 
   useEffect(() => {
     if (tab === "facturacion") loadTodaySales();
@@ -154,6 +169,21 @@ export default function Facturacion() {
         <TabPills tabs={tabs} active={tab} onChange={setTab} />
       </div>
 
+      {isCashier && cashOpen === false && (tab === "facturacion" || tab === "prestamos") ? (
+        <Card className="p-8 text-center space-y-4">
+          <p className="text-white font-medium">La caja está cerrada</p>
+          <p className="text-slate-400 text-sm">
+            Debes abrir la caja antes de registrar ventas o préstamos.
+          </p>
+          <button
+            onClick={() => navigate("/caja")}
+            className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium"
+          >
+            Ir a abrir la caja
+          </button>
+        </Card>
+      ) : (
+        <>
       {tab === "facturacion" && (
         <div className="space-y-4">
           {!showSaleForm && (
@@ -224,6 +254,8 @@ export default function Facturacion() {
             <LoansList loans={loans} onSelect={setSelectedLoan} />
           </div>
         </div>
+      )}
+        </>
       )}
 
       {tab === "pendientes" && (

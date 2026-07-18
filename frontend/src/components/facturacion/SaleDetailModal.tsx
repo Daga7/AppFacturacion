@@ -45,6 +45,7 @@ export function SaleDetailModal({
         quantity: String(d.quantity),
         unitPrice: String(d.unitPrice),
         discount: String(d.discount),
+        discountReason: d.discountReason ?? "",
       })),
     );
     setPayments(

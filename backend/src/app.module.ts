@@ -10,6 +10,7 @@ import { ReportsModule } from './reports/reports.module';
 import { BranchesModule } from './branches/branches.module';
 import { CustomersModule } from './customers/customers.module';
 import { LoansModule } from './loans/loans.module';
+import { CashModule } from './cash/cash.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -23,6 +24,7 @@ import { AuthModule } from './auth/auth.module';
     BranchesModule,
     CustomersModule,
     LoansModule,
+    CashModule,
     AuthModule,
   ],
   controllers: [AppController],

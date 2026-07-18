@@ -7,6 +7,7 @@ export interface SaleLine {
   quantity: string;
   unitPrice: string;
   discount: string;
+  discountReason: string;
 }
 
 export const emptySaleLine = (): SaleLine => ({
@@ -15,6 +16,7 @@ export const emptySaleLine = (): SaleLine => ({
   quantity: "1",
   unitPrice: "",
   discount: "0",
+  discountReason: "",
 });
 
 export const lineSubtotal = (l: SaleLine) => {
@@ -30,7 +32,7 @@ export const linesTotal = (lines: SaleLine[]) =>
 // Devuelve los detalles listos para la API, o un mensaje de error.
 export function parseLines(
   lines: SaleLine[],
-): { details: { productId: string; quantity: number; unitPrice: number; discount: number }[] } | { error: string } {
+): { details: { productId: string; quantity: number; unitPrice: number; discount: number; discountReason?: string }[] } | { error: string } {
   const details = lines
     .filter((l) => l.productId)
     .map((l) => ({
@@ -38,6 +40,7 @@ export function parseLines(
       quantity: parseInt(l.quantity, 10),
       unitPrice: parseFloat(l.unitPrice),
       discount: parseFloat(l.discount) || 0,
+      discountReason: l.discountReason.trim() || undefined,
     }));
   if (details.length === 0) return { error: "Agrega al menos un producto" };
   if (details.some((d) => !d.quantity || d.quantity < 1)) return { error: "Hay cantidades inválidas" };

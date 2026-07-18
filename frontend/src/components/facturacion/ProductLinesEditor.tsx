@@ -1,7 +1,7 @@
 import type { Product } from "../../lib/types";
 import { formatMoney } from "../../lib/format";
 import { inputCls } from "../ui/inputs";
-import { lineSubtotal, type SaleLine } from "./saleLines";
+import { emptySaleLine, lineSubtotal, type SaleLine } from "./saleLines";
 
 // Editor reutilizable de líneas de productos. Se escanea o escribe el código
 // de barras y los datos del producto (nombre y precio) se cargan solos.
@@ -121,11 +121,19 @@ export function ProductLinesEditor({
                 ✕
               </button>
             )}
+            {showDiscount && (parseFloat(line.discount) || 0) > 0 && (
+              <input
+                placeholder="Motivo del descuento (opcional)"
+                value={line.discountReason}
+                onChange={(e) => update(i, { discountReason: e.target.value })}
+                className={`${inputCls} w-full`}
+              />
+            )}
           </div>
         );
       })}
       <button
-        onClick={() => onChange([...lines, { productId: "", barcode: "", quantity: "1", unitPrice: "", discount: "0" }])}
+        onClick={() => onChange([...lines, emptySaleLine()])}
         className="text-sm text-brand-light hover:underline"
       >
         + Agregar otro producto

@@ -33,7 +33,7 @@ export class SalesController {
     if (req.user.role === 'CASHIER') {
       dto.branchId = req.user.branchId;
     }
-    return this.salesService.create(dto, req.user.id);
+    return this.salesService.create(dto, req.user.id, req.user.role);
   }
 
   @Get()

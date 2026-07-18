@@ -46,6 +46,7 @@ export interface SaleDetail {
   quantity: number;
   unitPrice: number;
   discount: number;
+  discountReason?: string | null;
   subtotal: number;
   product: Product;
 }
@@ -96,5 +97,46 @@ export interface Sale {
   details: SaleDetail[];
   payments: SalePayment[];
   loan?: SaleLoan | null;
+  cashSessionId?: string | null;
+  createdAt: string;
+}
+
+// Sesión de caja de una sucursal (apertura → ventas → cierre).
+export interface CashSession {
+  id: string;
+  openingAmount: number;
+  closingAmount?: number | null;
+  status: "OPEN" | "CLOSED";
+  branch: BranchInfo;
+  openedBy?: { id: string; username: string };
+  openedAt: string;
+  closedAt?: string | null;
+}
+
+export interface CashSummary {
+  session: CashSession;
+  salesCount: number;
+  totalSales: number;
+  cashReceived: number;
+  nequiReceived: number;
+  bancolombiaReceived: number;
+  transferReceived: number;
+  loans: { count: number; total: number };
+  discounts: { count: number; total: number };
+  expectedCash: number;
+  difference: number | null;
+}
+
+export interface DiscountDetail {
+  saleId: string;
+  invoiceNumber: number;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  originalPrice: number;
+  discountedPrice: number;
+  discount: number;
+  reason?: string | null;
+  user: string;
   createdAt: string;
 }

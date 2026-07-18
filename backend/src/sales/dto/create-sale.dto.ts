@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsEnum,
   IsOptional,
+  IsString,
   Min,
   ValidateNested,
   IsNotEmpty,
@@ -30,6 +31,10 @@ export class SaleDetailDto {
   @Min(0)
   @IsOptional()
   discount?: number;
+
+  @IsString()
+  @IsOptional()
+  discountReason?: string;
 }
 
 export class SalePaymentDto {

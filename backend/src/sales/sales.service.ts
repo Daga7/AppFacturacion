@@ -11,11 +11,22 @@ import { UpdateSaleDto } from './dto/update-sale.dto';
 export class SalesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateSaleDto, userId: string) {
+  async create(dto: CreateSaleDto, userId: string, role?: string) {
     const { branchId, customerId, isCredit, details, payments } = dto;
 
     if (details.length === 0) {
       throw new BadRequestException('La venta debe tener al menos un producto');
+    }
+
+    // Toda venta queda vinculada a la caja abierta de la sucursal. El cajero
+    // no puede vender sin caja abierta; al admin se le permite sin sesión.
+    const openSession = await this.prisma.cashSession.findFirst({
+      where: { branchId, status: 'OPEN' },
+    });
+    if (role === 'CASHIER' && !openSession) {
+      throw new BadRequestException(
+        'Debes abrir la caja antes de registrar ventas',
+      );
     }
 
     let total = 0;
@@ -24,6 +35,7 @@ export class SalesService {
       quantity: number;
       unitPrice: number;
       discount: number;
+      discountReason: string | null;
       subtotal: number;
     }[] = [];
 
@@ -54,6 +66,7 @@ export class SalesService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount ?? 0,
+        discountReason: item.discountReason?.trim() || null,
         subtotal,
       });
     }
@@ -95,6 +108,7 @@ export class SalesService {
           branchId,
           userId,
           customerId,
+          cashSessionId: openSession?.id ?? null,
           details: {
             create: saleDetails,
           },
@@ -302,6 +316,7 @@ export class SalesService {
       quantity: number;
       unitPrice: number;
       discount: number;
+      discountReason: string | null;
       subtotal: number;
     }[] = [];
 
@@ -320,6 +335,7 @@ export class SalesService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount ?? 0,
+        discountReason: item.discountReason?.trim() || null,
         subtotal,
       });
     }

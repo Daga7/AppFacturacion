@@ -47,6 +47,11 @@ enum InventoryMovementType {
   STOCK_OUT
 }
 
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
 model Company {
   id          String  @id @default(uuid())
   name        String
@@ -71,10 +76,11 @@ model Branch {
   customers   Customer[]
   inventories Inventory[]
 
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  sales     Sale[]
-  movements InventoryMovement[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  sales        Sale[]
+  movements    InventoryMovement[]
+  cashSessions CashSession[]
 }
 
 model User {
@@ -88,10 +94,11 @@ model User {
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sales     Sale[]
-  refreshTokens RefreshToken[] 
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sales         Sale[]
+  refreshTokens RefreshToken[]
+  cashSessions  CashSession[]
 }
 
 model Customer {
@@ -167,6 +174,31 @@ model Inventory {
   @@unique([branchId, productId])
 }
 
+// Sesión de caja de una sucursal: apertura con base en efectivo, ventas del
+// turno vinculadas, y cierre con el efectivo contado. Solo puede haber una
+// abierta por sucursal (validado en el servicio).
+model CashSession {
+  id String @id @default(uuid())
+
+  openingAmount Decimal
+  closingAmount Decimal?
+
+  status CashSessionStatus @default(OPEN)
+
+  branchId   String
+  openedById String
+
+  branch   Branch @relation(fields: [branchId], references: [id])
+  openedBy User   @relation(fields: [openedById], references: [id])
+
+  sales Sale[]
+
+  openedAt DateTime  @default(now())
+  closedAt DateTime?
+
+  @@index([branchId, status])
+}
+
 model Sale {
   id String @id @default(uuid())
 
@@ -184,6 +216,10 @@ model Sale {
   userId     String
   customerId String?
   loan       Loan?
+
+  // Caja abierta a la que quedó asociada la venta (trazabilidad del turno).
+  cashSessionId String?
+  cashSession   CashSession? @relation(fields: [cashSessionId], references: [id])
 
   branch   Branch    @relation(fields: [branchId], references: [id])
   user     User      @relation(fields: [userId], references: [id])
@@ -207,6 +243,9 @@ model SaleDetail {
 
   unitPrice Decimal
   discount  Decimal @default(0)
+
+  // Motivo del descuento aplicado (si existe), para el cierre de caja.
+  discountReason String?
 
   subtotal Decimal
 
