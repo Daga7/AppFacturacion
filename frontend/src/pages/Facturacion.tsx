@@ -14,6 +14,8 @@ import { LoansList } from "../components/facturacion/LoansList";
 import { LoanDetailModal } from "../components/facturacion/LoanDetailModal";
 import { CustomerForm } from "../components/facturacion/CustomerForm";
 import { CustomersList } from "../components/facturacion/CustomersList";
+import { PendingCustomersList, type CustomerDebt } from "../components/facturacion/PendingCustomersList";
+import { CustomerLoansModal } from "../components/facturacion/CustomerLoansModal";
 import { SalesHistory } from "../components/facturacion/SalesHistory";
 
 type Tab = "facturacion" | "prestamos" | "pendientes" | "ventas";
@@ -40,6 +42,7 @@ export default function Facturacion() {
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [selectedDebt, setSelectedDebt] = useState<CustomerDebt | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -203,11 +206,7 @@ export default function Facturacion() {
       {tab === "pendientes" && (
         <div>
           <h3 className="text-sm font-medium text-slate-400 mb-3">Clientes con préstamos activos</h3>
-          <LoansList
-            loans={activeLoans}
-            onSelect={setSelectedLoan}
-            emptyMessage="No hay clientes con préstamos activos"
-          />
+          <PendingCustomersList loans={activeLoans} onSelect={setSelectedDebt} />
         </div>
       )}
 
@@ -235,6 +234,17 @@ export default function Facturacion() {
         <LoanDetailModal
           loan={selectedLoan}
           onClose={() => setSelectedLoan(null)}
+          onChanged={() => {
+            setSuccess("Abono registrado");
+            loadLoans();
+          }}
+        />
+      )}
+
+      {selectedDebt && (
+        <CustomerLoansModal
+          debt={selectedDebt}
+          onClose={() => setSelectedDebt(null)}
           onChanged={() => {
             setSuccess("Abono registrado");
             loadLoans();
