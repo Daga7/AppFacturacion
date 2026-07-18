@@ -1,8 +1,12 @@
 # Importación masiva de inventario por Excel
 
-> Documento de diseño — **aún no implementado**. Describe cómo agregar carga
-> masiva de ingresos, salidas y transferencias de inventario desde un archivo
-> Excel, y qué se necesita para hacerlo.
+> **Implementado (jul 2026)** en la pestaña Stock de Inventario: el botón
+> "Subir Excel" dentro de Ingresar/Sacar/Transferir llena las filas del
+> formulario desde un archivo con columnas `codigo` y `cantidad` (tolera
+> `codigo_barras`, tildes y mayúsculas). Los códigos que no existen quedan
+> marcados en rojo y bloquean el guardado hasta corregirlos. Se usa SheetJS
+> con import dinámico (no pesa en el bundle inicial). Este documento conserva
+> el diseño original.
 
 ## Resumen
 

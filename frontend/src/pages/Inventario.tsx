@@ -43,7 +43,7 @@ type MovType = "STOCK_IN" | "STOCK_OUT" | "BRANCH_TRANSFER";
 
 type ProductForm = { name: string; barcode: string; purchasePrice: string; salePrice: string; categoryId: string; isActive: boolean };
 type CategoryForm = { name: string };
-type ItemRow = { productId: string; quantity: string };
+type ItemRow = { productId: string; barcode: string; quantity: string };
 type MovementForm = { branchId: string; note: string; items: ItemRow[] };
 type TransferForm = { fromBranchId: string; toBranchId: string; note: string; items: ItemRow[] };
 
@@ -63,8 +63,9 @@ type MovementRow = {
 
 const emptyProduct: ProductForm = { name: "", barcode: "", purchasePrice: "0", salePrice: "0", categoryId: "", isActive: true };
 const emptyCategory: CategoryForm = { name: "" };
-const emptyMovement: MovementForm = { branchId: "", note: "", items: [{ productId: "", quantity: "" }] };
-const emptyTransfer: TransferForm = { fromBranchId: "", toBranchId: "", note: "", items: [{ productId: "", quantity: "" }] };
+const emptyItemRow = (): ItemRow => ({ productId: "", barcode: "", quantity: "" });
+const emptyMovement: MovementForm = { branchId: "", note: "", items: [emptyItemRow()] };
+const emptyTransfer: TransferForm = { fromBranchId: "", toBranchId: "", note: "", items: [emptyItemRow()] };
 
 const movTypeLabels: Record<MovType, string> = {
   STOCK_IN: "Ingreso",
@@ -240,10 +241,62 @@ export default function Inventario() {
       .filter((i) => i.productId)
       .map((i) => ({ productId: i.productId, quantity: parseInt(i.quantity, 10) }));
 
+  // Filas con un código escrito que no corresponde a ningún producto.
+  const hasUnknownCodes = (items: ItemRow[]) =>
+    items.some((i) => i.barcode.trim() && !i.productId);
+
+  // Lee un Excel con columnas "codigo" y "cantidad" (tolera codigo_barras y
+  // tildes) y llena las filas del formulario; los códigos que no existen
+  // quedan marcados en rojo para corregirlos antes de guardar.
+  const importExcel = async (
+    file: File,
+    setItems: (updater: (items: ItemRow[]) => ItemRow[]) => void,
+  ) => {
+    try {
+      const { read, utils } = await import("xlsx");
+      const workbook = read(await file.arrayBuffer());
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const raw = utils.sheet_to_json<Record<string, unknown>>(sheet, { raw: false });
+
+      const norm = (s: string) =>
+        s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+      const items: ItemRow[] = [];
+      let notFound = 0;
+      for (const row of raw) {
+        const cols: Record<string, string> = {};
+        for (const [key, value] of Object.entries(row)) {
+          cols[norm(String(key))] = String(value ?? "").trim();
+        }
+        const code = cols["codigo"] ?? cols["codigo_barras"] ?? cols["codigo de barras"] ?? "";
+        if (!code) continue;
+        const product = products.find((p) => p.barcode === code);
+        if (!product) notFound++;
+        items.push({ barcode: code, productId: product?.id ?? "", quantity: cols["cantidad"] ?? "" });
+      }
+
+      if (items.length === 0) {
+        setError('El archivo no tiene filas válidas; usa las columnas "codigo" y "cantidad"');
+        return;
+      }
+      setItems(() => items);
+      setSuccess(
+        `Excel cargado: ${items.length} fila(s)` +
+          (notFound ? ` — ${notFound} código(s) no encontrados, márcalos en rojo y corrígelos` : ""),
+      );
+    } catch {
+      setError("No se pudo leer el archivo; asegúrate de que sea un Excel válido (.xlsx)");
+    }
+  };
+
   const handleSubmitMovement = async () => {
     const parsedItems = parseItems(movementForm.items);
     if (!movementForm.branchId) {
       setError("Selecciona el punto");
+      return;
+    }
+    if (hasUnknownCodes(movementForm.items)) {
+      setError("Hay códigos no encontrados (en rojo); corrígelos o elimina esas filas");
       return;
     }
     if (parsedItems.length === 0 || parsedItems.some((i) => !i.quantity || i.quantity < 1)) {
@@ -279,6 +332,10 @@ export default function Inventario() {
     }
     if (fromBranchId === toBranchId) {
       setError("El origen y el destino deben ser distintos");
+      return;
+    }
+    if (hasUnknownCodes(items)) {
+      setError("Hay códigos no encontrados (en rojo); corrígelos o elimina esas filas");
       return;
     }
     const parsedItems = parseItems(items);
@@ -463,46 +520,82 @@ export default function Inventario() {
     availabilityBranchId?: string,
   ) => (
     <div className="space-y-2">
-      {items.map((item, i) => (
-        <div key={i} className="flex flex-wrap gap-2 items-center">
-          <select
-            value={item.productId}
-            onChange={(e) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, productId: e.target.value } : it)))}
-            className={`${inputCls} flex-1 min-w-48`}
-          >
-            <option value="">Seleccionar producto</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.barcode})
-                {availabilityBranchId ? ` — disp: ${stockOf(availabilityBranchId, p.id)}` : ""}
-              </option>
-            ))}
-          </select>
+      <div className="hidden md:flex gap-2 text-xs text-slate-500">
+        <span className="w-44">Código de barras</span>
+        <span className="flex-1 min-w-40">Producto</span>
+        <span className="w-28">Cantidad</span>
+      </div>
+      {items.map((item, i) => {
+        const product = products.find((p) => p.id === item.productId);
+        return (
+          <div key={i} className="flex flex-wrap gap-2 items-center">
+            <input
+              value={item.barcode}
+              onChange={(e) => {
+                const barcode = e.target.value;
+                const match = products.find((p) => p.barcode === barcode.trim());
+                setItems((prev) => prev.map((it, j) => (j === i ? { ...it, barcode, productId: match?.id ?? "" } : it)));
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+              inputMode="numeric"
+              placeholder="Escanea o escribe el código"
+              className={`${inputCls} w-44 font-mono`}
+            />
+            <div className="flex-1 min-w-40 px-3 py-2 bg-slate-800/60 border border-slate-800 rounded-lg text-sm truncate">
+              {product ? (
+                <span className="text-white">
+                  {product.name}
+                  {availabilityBranchId && (
+                    <span className="text-slate-500"> · disp: {stockOf(availabilityBranchId, product.id)}</span>
+                  )}
+                </span>
+              ) : item.barcode.trim() ? (
+                <span className="text-red-400">Código no encontrado</span>
+              ) : (
+                <span className="text-slate-500">Producto</span>
+              )}
+            </div>
+            <input
+              type="number"
+              min="1"
+              placeholder="Cantidad"
+              value={item.quantity}
+              onChange={(e) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, quantity: e.target.value } : it)))}
+              className={`${inputCls} w-28`}
+            />
+            {items.length > 1 && (
+              <button
+                onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
+                className="text-slate-400 hover:text-red-400 text-sm px-2"
+                aria-label="Quitar producto"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        );
+      })}
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => setItems((prev) => [...prev, emptyItemRow()])}
+          className="text-sm text-brand-light hover:underline"
+        >
+          + Agregar otro producto
+        </button>
+        <label className="text-sm text-emerald-400 hover:underline cursor-pointer">
+          ⇪ Subir Excel (codigo, cantidad)
           <input
-            type="number"
-            min="1"
-            placeholder="Cantidad"
-            value={item.quantity}
-            onChange={(e) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, quantity: e.target.value } : it)))}
-            className={`${inputCls} w-28`}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) importExcel(file, setItems);
+              e.target.value = "";
+            }}
           />
-          {items.length > 1 && (
-            <button
-              onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
-              className="text-slate-400 hover:text-red-400 text-sm px-2"
-              aria-label="Quitar producto"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      ))}
-      <button
-        onClick={() => setItems((prev) => [...prev, { productId: "", quantity: "" }])}
-        className="text-sm text-brand-light hover:underline"
-      >
-        + Agregar otro producto
-      </button>
+        </label>
+      </div>
     </div>
   );
 
