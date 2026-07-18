@@ -192,6 +192,34 @@ export class ReportsService {
     };
   }
 
+  // Solo el total de ganancias, agregado en SQL: no carga las ventas, así la
+  // tarjeta responde rápido aunque haya miles de registros.
+  async profitTotal(branchId?: string, days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const [row] = await this.prisma.$queryRaw<
+      { revenue: number; cost: number }[]
+    >`
+      SELECT COALESCE(SUM(sd."subtotal"), 0)::float AS revenue,
+             COALESCE(SUM(p."purchasePrice" * sd."quantity"), 0)::float AS cost
+      FROM "SaleDetail" sd
+      JOIN "Product" p ON p."id" = sd."productId"
+      JOIN "Sale" s ON s."id" = sd."saleId"
+      WHERE s."status" = 'COMPLETED'
+        AND s."createdAt" >= ${since}
+        ${branchId ? Prisma.sql`AND s."branchId" = ${branchId}` : Prisma.empty}
+    `;
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+    return {
+      period: { since: since.toISOString(), days },
+      revenue: round(row.revenue),
+      cost: round(row.cost),
+      profit: round(row.revenue - row.cost),
+    };
+  }
+
   // Ganancia por venta: al total cobrado se le resta el costo de compra de
   // cada producto vendido; la suma de todas da la ganancia general.
   async profitSummary(branchId?: string, days = 30) {

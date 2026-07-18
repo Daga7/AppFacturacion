@@ -10,6 +10,7 @@ import type {
   PaymentSummary,
   GeneralSummary,
   ProfitSummary,
+  ProfitTotal,
 } from "../lib/reports";
 import { formatMoney } from "../lib/format";
 import { BranchSelector } from "../components/BranchSelector";
@@ -38,10 +39,16 @@ export default function Informes() {
   const [topProducts, setTopProducts] = useState<TopProducts | null>(null);
   const [invStatus, setInvStatus] = useState<InventoryStatus | null>(null);
   const [paySummary, setPaySummary] = useState<PaymentSummary | null>(null);
-  const [profit, setProfit] = useState<ProfitSummary | null>(null);
+  const [profitTotal, setProfitTotal] = useState<ProfitTotal | null>(null);
   const [general, setGeneral] = useState<GeneralSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // La tabla de ganancias se carga solo al hacer clic en la tarjeta, porque
+  // trae una fila por venta y puede ser pesada.
+  const [showProfitTable, setShowProfitTable] = useState(false);
+  const [profitDetail, setProfitDetail] = useState<ProfitSummary | null>(null);
+  const [profitLoading, setProfitLoading] = useState(false);
 
   const loadBranches = useCallback(async () => {
     try {
@@ -52,32 +59,42 @@ export default function Informes() {
   const loadReports = useCallback(async () => {
     if (!scope) return;
     setLoading(true);
+    setShowProfitTable(false);
+    setProfitDetail(null);
     try {
       if (scope === GENERAL) {
-        const [g, pf] = await Promise.all([
-          api.get<GeneralSummary>(`/reports/general-summary?days=${DAYS}`),
-          api.get<ProfitSummary>(`/reports/profit-summary?days=${DAYS}`),
-        ]);
-        setGeneral(g);
-        setProfit(pf);
+        setGeneral(await api.get<GeneralSummary>(`/reports/general-summary?days=${DAYS}`));
       } else {
         const q = `branchId=${scope}&days=${DAYS}`;
-        const [ss, tp, inv, pay, pf] = await Promise.all([
+        const [ss, tp, inv, pay, pt] = await Promise.all([
           api.get<SalesSummary>(`/reports/sales-summary?${q}`),
           api.get<TopProducts>(`/reports/top-products?${q}&limit=5`),
           api.get<InventoryStatus>(`/reports/inventory-status?branchId=${scope}`),
           api.get<PaymentSummary>(`/reports/payment-summary?${q}`),
-          api.get<ProfitSummary>(`/reports/profit-summary?${q}`),
+          api.get<ProfitTotal>(`/reports/profit-total?${q}`),
         ]);
         setSalesSummary(ss);
         setTopProducts(tp);
         setInvStatus(inv);
         setPaySummary(pay);
-        setProfit(pf);
+        setProfitTotal(pt);
       }
     } catch { setError("Error al cargar informes"); }
     setLoading(false);
   }, [scope]);
+
+  // Clic en la tarjeta de Ganancias: alterna la tabla y la carga la primera vez.
+  const toggleProfitTable = async () => {
+    if (showProfitTable) { setShowProfitTable(false); return; }
+    setShowProfitTable(true);
+    if (profitDetail) return;
+    setProfitLoading(true);
+    try {
+      const q = scope === GENERAL ? `days=${DAYS}` : `branchId=${scope}&days=${DAYS}`;
+      setProfitDetail(await api.get<ProfitSummary>(`/reports/profit-summary?${q}`));
+    } catch { setError("Error al cargar el detalle de ganancias"); }
+    setProfitLoading(false);
+  };
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => { loadBranches(); }, [loadBranches]);
@@ -125,21 +142,32 @@ export default function Informes() {
               <StatCard
                 label="Ganancias en total"
                 value={formatMoney(general.summary.totalProfit)}
-                hint="venta menos costo de compra"
+                hint="venta menos costo de compra · clic para ver el detalle"
                 tone="info"
+                onClick={toggleProfitTable}
               />
             </div>
+
+            {showProfitTable && (
+              <div className="mb-8">
+                {profitLoading ? (
+                  <p className="text-slate-400">Cargando detalle de ganancias...</p>
+                ) : (
+                  profitDetail && <ProfitPanel data={profitDetail} showBranch />
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <PaymentMethodsPanel byMethod={general.byMethod} grandTotal={general.grandTotalPayments} />
               <BranchBreakdownPanel byBranch={general.byBranch} />
-              {profit && <ProfitPanel data={profit} showBranch />}
             </div>
           </div>
         )
       ) : (
         <div>
           {salesSummary && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <StatCard
                 label="Ventas totales"
                 value={salesSummary.summary.totalSales}
@@ -157,13 +185,31 @@ export default function Informes() {
                 hint="por venta"
                 tone="info"
               />
+              {profitTotal && (
+                <StatCard
+                  label="Ganancias"
+                  value={formatMoney(profitTotal.profit)}
+                  hint="clic para ver el detalle"
+                  tone="success"
+                  onClick={toggleProfitTable}
+                />
+              )}
+            </div>
+          )}
+
+          {showProfitTable && (
+            <div className="mb-8">
+              {profitLoading ? (
+                <p className="text-slate-400">Cargando detalle de ganancias...</p>
+              ) : (
+                profitDetail && <ProfitPanel data={profitDetail} />
+              )}
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {topProducts && <TopProductsPanel data={topProducts} />}
             {paySummary && <PaymentMethodsPanel byMethod={paySummary.byMethod} grandTotal={paySummary.grandTotal} />}
-            {profit && <ProfitPanel data={profit} />}
             {invStatus && <InventoryStatusPanel data={invStatus} />}
             {salesSummary && <SalesByDayPanel byDay={salesSummary.byDay} />}
           </div>

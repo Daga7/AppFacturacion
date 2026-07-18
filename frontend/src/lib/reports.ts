@@ -55,3 +55,10 @@ export interface ProfitSummary {
   rows: ProfitRow[];
   totals: { revenue: number; cost: number; profit: number };
 }
+
+export interface ProfitTotal {
+  period: ReportPeriod;
+  revenue: number;
+  cost: number;
+  profit: number;
+}

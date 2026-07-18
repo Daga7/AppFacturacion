@@ -16,12 +16,14 @@ interface StatCardProps {
   value: ReactNode;
   hint?: string;
   tone?: StatTone;
+  onClick?: () => void;
 }
 
 // Tarjeta de estadística: etiqueta, valor grande y nota al pie.
-export function StatCard({ label, value, hint, tone = "default" }: StatCardProps) {
+// Con onClick se vuelve interactiva (p. ej. para desplegar un detalle).
+export function StatCard({ label, value, hint, tone = "default", onClick }: StatCardProps) {
   return (
-    <Card className="p-5">
+    <Card className="p-5" onClick={onClick}>
       <p className="text-sm text-slate-400 mb-1">{label}</p>
       <p className={`text-3xl font-bold ${tones[tone]}`}>{value}</p>
       {hint && <p className="text-xs text-slate-500 mt-1">{hint}</p>}
