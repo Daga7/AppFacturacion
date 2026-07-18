@@ -45,4 +45,12 @@ export class ReportsController {
   generalSummary(@Query('days') days?: string) {
     return this.reportsService.generalSummary(days ? +days : 30);
   }
+
+  @Get('profit-summary')
+  profitSummary(
+    @Query('branchId') branchId?: string,
+    @Query('days') days?: string,
+  ) {
+    return this.reportsService.profitSummary(branchId, days ? +days : 30);
+  }
 }

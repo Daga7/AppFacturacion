@@ -192,6 +192,64 @@ export class ReportsService {
     };
   }
 
+  // Ganancia por venta: al total cobrado se le resta el costo de compra de
+  // cada producto vendido; la suma de todas da la ganancia general.
+  async profitSummary(branchId?: string, days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const sales = await this.prisma.sale.findMany({
+      where: {
+        status: 'COMPLETED',
+        createdAt: { gte: since },
+        ...(branchId ? { branchId } : {}),
+      },
+      include: {
+        details: { include: { product: true } },
+        branch: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+
+    const rows = sales.map((s) => {
+      const cost = s.details.reduce(
+        (sum, d) => sum + Number(d.product.purchasePrice) * d.quantity,
+        0,
+      );
+      const total = Number(s.total);
+      return {
+        saleId: s.id,
+        invoiceNumber: s.invoiceNumber,
+        branch: s.branch.name,
+        createdAt: s.createdAt.toISOString(),
+        total: round(total),
+        cost: round(cost),
+        profit: round(total - cost),
+      };
+    });
+
+    const totals = rows.reduce(
+      (acc, r) => ({
+        revenue: acc.revenue + r.total,
+        cost: acc.cost + r.cost,
+        profit: acc.profit + r.profit,
+      }),
+      { revenue: 0, cost: 0, profit: 0 },
+    );
+
+    return {
+      period: { since: since.toISOString(), days },
+      rows,
+      totals: {
+        revenue: round(totals.revenue),
+        cost: round(totals.cost),
+        profit: round(totals.profit),
+      },
+    };
+  }
+
   async paymentSummary(branchId?: string, days = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);
