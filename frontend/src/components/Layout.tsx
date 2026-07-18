@@ -13,12 +13,14 @@ const baseNavItems = [
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  // El cajero solo ve su módulo de caja; a facturación llega desde la
-  // tarjeta "Registrar ventas".
+  // El cajero solo ve su módulo de caja (a facturación llega desde "Registrar
+  // ventas"); el admin tiene además la vinculación con Telegram.
   const navItems =
     user?.role === "CASHIER"
       ? [{ to: "/caja", label: "Caja", icon: "▣" }]
-      : baseNavItems;
+      : user?.role === "ADMIN"
+        ? [...baseNavItems, { to: "/telegram", label: "Vincular Telegram", icon: "✈" }]
+        : baseNavItems;
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -10,6 +11,7 @@ import {
 import { LoanStatus } from '@prisma/client';
 import { LoansService } from './loans.service';
 import { CreateLoanPaymentDto } from './dto/create-loan-payment.dto';
+import { ExchangeLoanDto } from './dto/exchange-loan.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
 
@@ -30,5 +32,17 @@ export class LoansController {
   @Post(':id/payments')
   addPayment(@Param('id') id: string, @Body() dto: CreateLoanPaymentDto) {
     return this.loansService.addPayment(id, dto);
+  }
+
+  @Roles('ADMIN', 'CASHIER')
+  @Delete(':id')
+  returnLoan(@Param('id') id: string) {
+    return this.loansService.returnLoan(id);
+  }
+
+  @Roles('ADMIN', 'CASHIER')
+  @Post(':id/exchange')
+  exchange(@Param('id') id: string, @Body() dto: ExchangeLoanDto) {
+    return this.loansService.exchange(id, dto);
   }
 }

@@ -11,6 +11,7 @@ import { BranchesModule } from './branches/branches.module';
 import { CustomersModule } from './customers/customers.module';
 import { LoansModule } from './loans/loans.module';
 import { CashModule } from './cash/cash.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { AuthModule } from './auth/auth.module';
     CustomersModule,
     LoansModule,
     CashModule,
+    TelegramModule,
     AuthModule,
   ],
   controllers: [AppController],

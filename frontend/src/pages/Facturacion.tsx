@@ -300,11 +300,14 @@ export default function Facturacion() {
       {selectedDebt && (
         <CustomerLoansModal
           debt={selectedDebt}
+          products={products}
+          stockOf={stockOf}
           readOnly={isSupervisor}
           onClose={() => setSelectedDebt(null)}
           onChanged={() => {
-            setSuccess("Abono registrado");
+            setSuccess("Préstamo actualizado");
             loadLoans();
+            loadProducts();
           }}
         />
       )}

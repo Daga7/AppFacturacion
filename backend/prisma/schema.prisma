@@ -94,6 +94,13 @@ model User {
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
+  // Vinculación con Telegram: el usuario genera un código en la app y lo
+  // envía al bot con /vincular; el webhook guarda el chat y lo verifica.
+  telegramChatId      String?
+  telegramLinkCode    String?   @unique
+  telegramLinkExpires DateTime?
+  telegramVerifiedAt  DateTime?
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   sales         Sale[]
