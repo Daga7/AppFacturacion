@@ -4,14 +4,13 @@ import type { BranchInfo, Product, Sale } from "../../lib/types";
 import { formatMoney } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
-import { BranchPicker } from "./BranchPicker";
 import { SalesList } from "./SalesList";
 import { SaleDetailModal } from "./SaleDetailModal";
 
 interface SalesHistoryProps {
-  branches: BranchInfo[];
+  branch: BranchInfo | null;
   products: Product[];
-  availability: (branchId: string, productId: string) => number;
+  availability: (productId: string) => number;
   onError: (message: string) => void;
 }
 
@@ -21,10 +20,9 @@ const monthLabel = (d: Date) =>
 const dayLabel = (iso: string) =>
   new Date(iso).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
 
-// "Ventas realizadas" (admin): elegir punto de venta → mes → días con ventas
-// → ventas del día → detalle editable.
-export function SalesHistory({ branches, products, availability, onError }: SalesHistoryProps) {
-  const [branch, setBranch] = useState<BranchInfo | null>(null);
+// "Ventas realizadas" (admin) de la sede elegida en el selector superior:
+// mes → días con ventas → ventas del día → detalle editable.
+export function SalesHistory({ branch, products, availability, onError }: SalesHistoryProps) {
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -56,7 +54,7 @@ export function SalesHistory({ branches, products, availability, onError }: Sale
   }, [loadSales]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  if (!branch) return <BranchPicker branches={branches} onSelect={setBranch} />;
+  if (!branch) return <EmptyState message="Selecciona una sede en el selector superior" />;
 
   // Agrupar por día (clave YYYY-MM-DD en hora local), de más reciente a más antiguo.
   const byDay = new Map<string, Sale[]>();
@@ -75,13 +73,7 @@ export function SalesHistory({ branches, products, availability, onError }: Sale
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <button
-          onClick={() => { setBranch(null); setExpandedDay(null); }}
-          className="text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          ← Cambiar punto
-        </button>
-        <h3 className="text-lg font-semibold text-white">{branch.name}</h3>
+        <h3 className="text-lg font-semibold text-white">Ventas en {branch.name}</h3>
         <div className="flex items-center gap-2">
           <button onClick={() => changeMonth(-1)} className="px-2 py-1 text-slate-400 hover:text-white" aria-label="Mes anterior">‹</button>
           <span className="text-sm text-white font-medium capitalize w-40 text-center">{monthLabel(month)}</span>
@@ -134,7 +126,7 @@ export function SalesHistory({ branches, products, availability, onError }: Sale
           sale={selectedSale}
           isAdmin
           products={products}
-          availability={(productId) => availability(branch.id, productId)}
+          availability={availability}
           onClose={() => setSelectedSale(null)}
           onChanged={loadSales}
         />

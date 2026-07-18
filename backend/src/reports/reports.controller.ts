@@ -40,4 +40,9 @@ export class ReportsController {
   ) {
     return this.reportsService.paymentSummary(branchId, days ? +days : 30);
   }
+
+  @Get('general-summary')
+  generalSummary(@Query('days') days?: string) {
+    return this.reportsService.generalSummary(days ? +days : 30);
+  }
 }

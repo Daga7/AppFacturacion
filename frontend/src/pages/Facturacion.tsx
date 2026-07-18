@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
+import { useBranchStore } from "../stores/branch";
+import { BranchSelector } from "../components/BranchSelector";
 import type { BranchInfo, Customer, Loan, Product, Sale } from "../lib/types";
 import { invoiceCode } from "../lib/format";
 import { TabPills } from "../components/ui/TabPills";
@@ -29,7 +31,10 @@ const todayStart = () => {
 export default function Facturacion() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "ADMIN";
-  const branchId = user?.branchId ?? "";
+  const selectedBranchId = useBranchStore((s) => s.branchId);
+  const setSelectedBranchId = useBranchStore((s) => s.setBranchId);
+  // Sede activa: la elegida en el selector superior, o la del usuario.
+  const branchId = selectedBranchId ?? user?.branchId ?? "";
 
   const [tab, setTab] = useState<Tab>("facturacion");
   const [products, setProducts] = useState<Product[]>([]);
@@ -67,10 +72,11 @@ export default function Facturacion() {
   }, [branchId]);
 
   const loadLoans = useCallback(async () => {
+    if (!branchId) return;
     try {
-      setLoans(await api.get<Loan[]>("/loans"));
+      setLoans(await api.get<Loan[]>(`/loans?branchId=${branchId}`));
     } catch { setError("Error al cargar préstamos"); }
-  }, []);
+  }, [branchId]);
 
   const loadTodaySales = useCallback(async () => {
     if (!branchId) return;
@@ -121,7 +127,7 @@ export default function Facturacion() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-2xl font-bold text-white">Facturación</h2>
-        <span className="text-sm text-slate-400">{user?.branchName}</span>
+        <BranchSelector branches={branches} value={branchId} onChange={setSelectedBranchId} />
       </div>
 
       {error && <Alert kind="error" message={error} onClose={() => setError(null)} />}
@@ -212,9 +218,9 @@ export default function Facturacion() {
 
       {tab === "ventas" && isAdmin && (
         <SalesHistory
-          branches={branches}
+          branch={branches.find((b) => b.id === branchId) ?? null}
           products={products}
-          availability={stockOf}
+          availability={(productId) => stockOf(branchId, productId)}
           onError={setError}
         />
       )}

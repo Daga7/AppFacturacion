@@ -112,6 +112,86 @@ export class ReportsService {
     };
   }
 
+  // Informe general (todas las sedes unidas): ventas, tickets, ganancias y
+  // métodos de pago del período. La ganancia se calcula por línea vendida:
+  // subtotal cobrado menos el costo de compra del producto.
+  async generalSummary(days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const sales = await this.prisma.sale.findMany({
+      where: { status: 'COMPLETED', createdAt: { gte: since } },
+      include: {
+        details: { include: { product: true } },
+        payments: true,
+        branch: true,
+      },
+    });
+
+    const totalTickets = sales.length;
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    const byMethod: Record<string, { count: number; total: number }> = {};
+    const byBranch: Record<string, { tickets: number; revenue: number }> = {};
+
+    for (const s of sales) {
+      totalRevenue += Number(s.total);
+
+      for (const d of s.details) {
+        totalProfit +=
+          Number(d.subtotal) - Number(d.product.purchasePrice) * d.quantity;
+      }
+
+      for (const p of s.payments) {
+        if (!byMethod[p.paymentMethod]) {
+          byMethod[p.paymentMethod] = { count: 0, total: 0 };
+        }
+        byMethod[p.paymentMethod].count++;
+        byMethod[p.paymentMethod].total += Number(p.amount);
+      }
+
+      const branchName = s.branch.name;
+      if (!byBranch[branchName]) byBranch[branchName] = { tickets: 0, revenue: 0 };
+      byBranch[branchName].tickets++;
+      byBranch[branchName].revenue += Number(s.total);
+    }
+
+    const grandTotalPayments = Object.values(byMethod).reduce(
+      (sum, m) => sum + m.total,
+      0,
+    );
+    const round = (n: number) => Math.round(n * 100) / 100;
+
+    return {
+      period: { since: since.toISOString(), days },
+      summary: {
+        totalRevenue: round(totalRevenue),
+        totalTickets,
+        totalProfit: round(totalProfit),
+      },
+      byMethod: Object.fromEntries(
+        Object.entries(byMethod).map(([k, v]) => [
+          k,
+          {
+            count: v.count,
+            total: round(v.total),
+            share:
+              grandTotalPayments > 0
+                ? Math.round((v.total / grandTotalPayments) * 100)
+                : 0,
+          },
+        ]),
+      ),
+      grandTotalPayments: round(grandTotalPayments),
+      byBranch: Object.fromEntries(
+        Object.entries(byBranch).map(([k, v]) => [
+          k,
+          { tickets: v.tickets, revenue: round(v.revenue) },
+        ]),
+      ),
+    };
+  }
+
   async paymentSummary(branchId?: string, days = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);
