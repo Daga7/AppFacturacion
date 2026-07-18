@@ -12,6 +12,7 @@ interface SalesHistoryProps {
   products: Product[];
   availability: (productId: string) => number;
   onError: (message: string) => void;
+  canEdit?: boolean;
 }
 
 const monthLabel = (d: Date) =>
@@ -22,7 +23,7 @@ const dayLabel = (iso: string) =>
 
 // "Ventas realizadas" (admin) de la sede elegida en el selector superior:
 // mes → días con ventas → ventas del día → detalle editable.
-export function SalesHistory({ branch, products, availability, onError }: SalesHistoryProps) {
+export function SalesHistory({ branch, products, availability, onError, canEdit = false }: SalesHistoryProps) {
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -124,7 +125,7 @@ export function SalesHistory({ branch, products, availability, onError }: SalesH
       {selectedSale && (
         <SaleDetailModal
           sale={selectedSale}
-          isAdmin
+          isAdmin={canEdit}
           products={products}
           availability={availability}
           onClose={() => setSelectedSale(null)}

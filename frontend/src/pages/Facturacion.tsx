@@ -31,12 +31,15 @@ const todayStart = () => {
 export default function Facturacion() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "ADMIN";
+  // El supervisor solo consulta: ve ventas y pendientes de ambas sedes, sin
+  // registrar ni editar nada (el backend también se lo impide).
+  const isSupervisor = user?.role === "SUPERVISOR";
   const selectedBranchId = useBranchStore((s) => s.branchId);
   const setSelectedBranchId = useBranchStore((s) => s.setBranchId);
   // Sede activa: la elegida en el selector superior, o la del usuario.
   const branchId = selectedBranchId ?? user?.branchId ?? "";
 
-  const [tab, setTab] = useState<Tab>("facturacion");
+  const [tab, setTab] = useState<Tab>(isSupervisor ? "ventas" : "facturacion");
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -114,12 +117,17 @@ export default function Facturacion() {
     loadTodaySales();
   };
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "facturacion", label: "Facturación" },
-    { key: "prestamos", label: "Préstamos" },
-    { key: "pendientes", label: "Clientes Pendientes" },
-    ...(isAdmin ? [{ key: "ventas" as Tab, label: "Ventas realizadas" }] : []),
-  ];
+  const tabs: { key: Tab; label: string }[] = isSupervisor
+    ? [
+        { key: "ventas", label: "Ventas realizadas" },
+        { key: "pendientes", label: "Clientes Pendientes" },
+      ]
+    : [
+        { key: "facturacion", label: "Facturación" },
+        { key: "prestamos", label: "Préstamos" },
+        { key: "pendientes", label: "Clientes Pendientes" },
+        ...(isAdmin ? [{ key: "ventas" as Tab, label: "Ventas realizadas" }] : []),
+      ];
 
   const activeLoans = loans.filter((l) => l.loanStatus === "ACTIVE");
 
@@ -216,12 +224,13 @@ export default function Facturacion() {
         </div>
       )}
 
-      {tab === "ventas" && isAdmin && (
+      {tab === "ventas" && (isAdmin || isSupervisor) && (
         <SalesHistory
           branch={branches.find((b) => b.id === branchId) ?? null}
           products={products}
           availability={(productId) => stockOf(branchId, productId)}
           onError={setError}
+          canEdit={isAdmin}
         />
       )}
 
@@ -250,6 +259,7 @@ export default function Facturacion() {
       {selectedDebt && (
         <CustomerLoansModal
           debt={selectedDebt}
+          readOnly={isSupervisor}
           onClose={() => setSelectedDebt(null)}
           onChanged={() => {
             setSuccess("Abono registrado");

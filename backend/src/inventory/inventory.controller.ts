@@ -15,8 +15,9 @@ import { BulkAdjustStockDto } from './dto/bulk-adjust-stock.dto';
 import { TransferStockDto } from './dto/transfer-stock.dto';
 import { UpdateMovementDto } from './dto/update-movement.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
@@ -39,6 +40,7 @@ export class InventoryController {
     );
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Patch('movements/:id')
   updateMovement(@Param('id') id: string, @Body() dto: UpdateMovementDto) {
     return this.inventoryService.updateMovement(id, dto);
@@ -49,16 +51,19 @@ export class InventoryController {
     return this.inventoryService.getLowStock(threshold ? +threshold : 5);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Post('adjust')
   adjustStock(@Body() dto: AdjustStockDto) {
     return this.inventoryService.adjustStock(dto);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Post('adjust-bulk')
   adjustStockBulk(@Body() dto: BulkAdjustStockDto) {
     return this.inventoryService.adjustStockBulk(dto);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Post('transfer')
   transferStock(@Body() dto: TransferStockDto) {
     return this.inventoryService.transferStock(dto);

@@ -151,7 +151,8 @@ export class ReportsService {
       }
 
       const branchName = s.branch.name;
-      if (!byBranch[branchName]) byBranch[branchName] = { tickets: 0, revenue: 0 };
+      if (!byBranch[branchName])
+        byBranch[branchName] = { tickets: 0, revenue: 0 };
       byBranch[branchName].tickets++;
       byBranch[branchName].revenue += Number(s.total);
     }

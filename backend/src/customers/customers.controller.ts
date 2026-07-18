@@ -12,8 +12,9 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
@@ -23,11 +24,13 @@ export class CustomersController {
     return this.customersService.findAll(branchId);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Post()
   create(@Body() dto: CreateCustomerDto) {
     return this.customersService.create(dto);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateCustomerDto) {
     return this.customersService.update(id, dto);

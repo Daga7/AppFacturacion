@@ -11,11 +11,13 @@ interface CustomerLoansModalProps {
   debt: CustomerDebt;
   onClose: () => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }
 
 // Detalle de la deuda de un cliente: cada préstamo con su fecha, productos y
 // saldo. El abono se aplica automáticamente a los préstamos más antiguos.
-export function CustomerLoansModal({ debt, onClose, onChanged }: CustomerLoansModalProps) {
+// En modo readOnly (supervisor) solo se consulta, sin registrar abonos.
+export function CustomerLoansModal({ debt, onClose, onChanged, readOnly = false }: CustomerLoansModalProps) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("CASH");
   const [saving, setSaving] = useState(false);
@@ -107,6 +109,7 @@ export function CustomerLoansModal({ debt, onClose, onChanged }: CustomerLoansMo
         })}
       </div>
 
+      {!readOnly && (
       <div className="border-t border-slate-800 pt-4 space-y-3">
         <p className="text-sm font-medium text-slate-400">Registrar abono</p>
         <div className="flex flex-wrap gap-2">
@@ -135,6 +138,7 @@ export function CustomerLoansModal({ debt, onClose, onChanged }: CustomerLoansMo
           {saving ? "Registrando..." : "Abonar"}
         </button>
       </div>
+      )}
     </Modal>
   );
 }

@@ -20,11 +20,12 @@ interface RequestWithUser extends ExpressRequest {
   user: { id: string; username: string; role: string };
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
+  @Roles('ADMIN', 'CASHIER')
   @Post()
   create(@Body() dto: CreateSaleDto, @Request() req: RequestWithUser) {
     return this.salesService.create(dto, req.user.id);
@@ -45,13 +46,13 @@ export class SalesController {
     return this.salesService.findOne(id);
   }
 
-  @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateSaleDto) {
     return this.salesService.update(id, dto);
   }
 
+  @Roles('ADMIN', 'CASHIER')
   @Post(':id/cancel')
   cancel(@Param('id') id: string) {
     return this.salesService.cancel(id);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../lib/api";
+import { useAuthStore } from "../stores/auth";
 
 interface Category {
   id: string;
@@ -75,6 +76,8 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 
 export default function Inventario() {
+  // El supervisor solo consulta el inventario, sin crear/editar/mover nada.
+  const readOnly = useAuthStore((s) => s.user)?.role === "SUPERVISOR";
   const [tab, setTab] = useState<Tab>("productos");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -531,8 +534,12 @@ export default function Inventario() {
                 </span>
               </td>
               <td className="py-3 text-right">
-                <button onClick={() => editProduct(p)} className="text-slate-400 hover:text-white mr-2 text-xs">Editar</button>
-                <button onClick={() => handleDeleteProduct(p.id)} className="text-slate-400 hover:text-red-400 text-xs">Eliminar</button>
+                {!readOnly && (
+                  <>
+                    <button onClick={() => editProduct(p)} className="text-slate-400 hover:text-white mr-2 text-xs">Editar</button>
+                    <button onClick={() => handleDeleteProduct(p.id)} className="text-slate-400 hover:text-red-400 text-xs">Eliminar</button>
+                  </>
+                )}
               </td>
             </tr>
           ))}
@@ -587,12 +594,14 @@ export default function Inventario() {
             <h3 className="text-lg font-semibold text-white">
               {normalizedSearch ? `${filteredProducts.length} de ${products.length}` : products.length} productos
             </h3>
-            <button
-              onClick={() => { setEditingProduct(null); setProductForm(emptyProduct); setShowProductForm(true); }}
-              className="px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors"
-            >
-              + Nuevo producto
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => { setEditingProduct(null); setProductForm(emptyProduct); setShowProductForm(true); }}
+                className="px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors"
+              >
+                + Nuevo producto
+              </button>
+            )}
           </div>
 
           <div className="mb-4">
@@ -680,12 +689,14 @@ export default function Inventario() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">{categories.length} categorías</h3>
-            <button
-              onClick={() => { setEditingCategory(null); setCategoryForm(emptyCategory); setShowCategoryForm(true); }}
-              className="px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors"
-            >
-              + Nueva categoría
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => { setEditingCategory(null); setCategoryForm(emptyCategory); setShowCategoryForm(true); }}
+                className="px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors"
+              >
+                + Nueva categoría
+              </button>
+            )}
           </div>
 
           {showCategoryForm && (
@@ -703,10 +714,12 @@ export default function Inventario() {
             {categories.map((c) => (
               <div key={c.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between">
                 <span className="text-white text-sm">{c.name}</span>
-                <div className="flex gap-2">
-                  <button onClick={() => editCategory(c)} className="text-xs text-slate-400 hover:text-white">Editar</button>
-                  <button onClick={() => handleDeleteCategory(c.id)} className="text-xs text-slate-400 hover:text-red-400">Eliminar</button>
-                </div>
+                {!readOnly && (
+                  <div className="flex gap-2">
+                    <button onClick={() => editCategory(c)} className="text-xs text-slate-400 hover:text-white">Editar</button>
+                    <button onClick={() => handleDeleteCategory(c.id)} className="text-xs text-slate-400 hover:text-red-400">Eliminar</button>
+                  </div>
+                )}
               </div>
             ))}
             {categories.length === 0 && <p className="text-slate-500 text-sm">No hay categorías registradas</p>}
@@ -718,6 +731,7 @@ export default function Inventario() {
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-lg font-semibold text-white">Estado de inventario</h3>
+            {!readOnly && (
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => openStockAction("in")}
@@ -738,6 +752,7 @@ export default function Inventario() {
                 ⇄ Transferir
               </button>
             </div>
+            )}
           </div>
 
           {(stockAction === "in" || stockAction === "out") && (
@@ -958,7 +973,7 @@ export default function Inventario() {
               <span className="text-white">{selectedMovement.branchLabel}</span>
             </div>
 
-            {selectedMovement.editable ? (
+            {selectedMovement.editable && !readOnly ? (
               <div className="space-y-3 pt-2 border-t border-slate-800">
                 <div>
                   <label className="block text-slate-400 text-xs mb-1">Cantidad</label>
@@ -996,7 +1011,9 @@ export default function Inventario() {
               </div>
             ) : (
               <p className="pt-2 border-t border-slate-800 text-xs text-slate-500">
-                Este movimiento no se puede editar (transferencia antigua sin vínculo entre sus dos lados).
+                {readOnly
+                  ? "Modo consulta: tu rol no permite editar movimientos."
+                  : "Este movimiento no se puede editar (transferencia antigua sin vínculo entre sus dos lados)."}
               </p>
             )}
           </div>
