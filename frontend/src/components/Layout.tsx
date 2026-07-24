@@ -10,16 +10,29 @@ const baseNavItems = [
   { to: "/informes", label: "Informes", icon: "⊟" },
 ];
 
+// Módulos de gestión (solicitudes y pedidos) que ADMIN y vendedor comparten,
+// cada uno con su vista según el rol.
+const requestNavItems = [
+  { to: "/traslados", label: "Traslados", icon: "⇄" },
+  { to: "/pedidos-especiales", label: "Pedidos especiales", icon: "★" },
+  { to: "/lista-compras", label: "Lista de compras", icon: "☑" },
+  { to: "/solicitudes-precio", label: "Solicitudes de precio", icon: "＄" },
+];
+
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  // El cajero solo ve su módulo de caja (a facturación llega desde "Registrar
-  // ventas"); el admin tiene además la vinculación con Telegram.
+  // El cajero (vendedor) ve su caja y sus módulos propios; el admin ve todo
+  // más la gestión de solicitudes y la vinculación con Telegram.
   const navItems =
     user?.role === "CASHIER"
-      ? [{ to: "/caja", label: "Caja", icon: "▣" }]
+      ? [{ to: "/caja", label: "Caja", icon: "▣" }, ...requestNavItems]
       : user?.role === "ADMIN"
-        ? [...baseNavItems, { to: "/telegram", label: "Vincular Telegram", icon: "✈" }]
+        ? [
+            ...baseNavItems,
+            ...requestNavItems,
+            { to: "/telegram", label: "Vincular Telegram", icon: "✈" },
+          ]
         : baseNavItems;
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();

@@ -12,6 +12,10 @@ import { CustomersModule } from './customers/customers.module';
 import { LoansModule } from './loans/loans.module';
 import { CashModule } from './cash/cash.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { TransfersModule } from './transfers/transfers.module';
+import { SpecialOrdersModule } from './special-orders/special-orders.module';
+import { PurchaseListModule } from './purchase-list/purchase-list.module';
+import { PriceRequestsModule } from './price-requests/price-requests.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -27,6 +31,10 @@ import { AuthModule } from './auth/auth.module';
     LoansModule,
     CashModule,
     TelegramModule,
+    TransfersModule,
+    SpecialOrdersModule,
+    PurchaseListModule,
+    PriceRequestsModule,
     AuthModule,
   ],
   controllers: [AppController],

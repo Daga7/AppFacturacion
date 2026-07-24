@@ -52,6 +52,36 @@ enum CashSessionStatus {
   CLOSED
 }
 
+// Estado de una solicitud de traslado entre sedes (#2) y de una solicitud de
+// cambio de precio (#5): nace PENDING y el administrador la resuelve.
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Avance de un pedido especial (#3): abonado -> pedido hecho -> llegó al
+// local -> recogido por el cliente.
+enum SpecialOrderStatus {
+  DEPOSITED
+  ORDERED
+  ARRIVED
+  PICKED_UP
+}
+
+// Momento del pago de un pedido especial: el abono inicial o el saldo final.
+enum SpecialOrderPaymentKind {
+  DEPOSIT
+  FINAL
+}
+
+// Origen de un ítem de la lista de compras (#4): sugerido por el sistema
+// según stock/rotación, o agregado manualmente por un vendedor.
+enum PurchaseListSource {
+  MANUAL
+  AUTO
+}
+
 model Company {
   id          String  @id @default(uuid())
   name        String
@@ -81,6 +111,11 @@ model Branch {
   sales        Sale[]
   movements    InventoryMovement[]
   cashSessions CashSession[]
+
+  transfersFrom     BranchTransferRequest[] @relation("TransferFromBranch")
+  transfersTo       BranchTransferRequest[] @relation("TransferToBranch")
+  specialOrders     SpecialOrder[]
+  purchaseListItems PurchaseListItem[]
 }
 
 model User {
@@ -106,6 +141,13 @@ model User {
   sales         Sale[]
   refreshTokens RefreshToken[]
   cashSessions  CashSession[]
+
+  transferRequests     BranchTransferRequest[] @relation("TransferRequestedBy")
+  transferResolutions  BranchTransferRequest[] @relation("TransferResolvedBy")
+  specialOrders        SpecialOrder[]
+  purchaseListItems    PurchaseListItem[]
+  priceChangeRequests  PriceChangeRequest[]    @relation("PriceRequestedBy")
+  priceChangeApprovals PriceChangeRequest[]    @relation("PriceResolvedBy")
 }
 
 // Chats de Telegram vinculados a una cuenta (varios por usuario). Se crean
@@ -176,6 +218,10 @@ model Product {
   updatedAt   DateTime            @updatedAt
   saleDetails SaleDetail[]
   movements   InventoryMovement[]
+
+  priceChangeRequests PriceChangeRequest[]
+  purchaseListItems   PurchaseListItem[]
+  transferRequests    BranchTransferRequest[]
 }
 
 model Inventory {
@@ -214,7 +260,8 @@ model CashSession {
   branch   Branch @relation(fields: [branchId], references: [id])
   openedBy User   @relation(fields: [openedById], references: [id])
 
-  sales Sale[]
+  sales                Sale[]
+  specialOrderPayments SpecialOrderPayment[]
 
   openedAt DateTime  @default(now())
   closedAt DateTime?
@@ -354,6 +401,7 @@ model InventoryMovement {
 
   createdAt DateTime @default(now())
 }
+
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
@@ -361,4 +409,147 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+// #2 Solicitud de traslado de mercancía entre sedes. El vendedor la crea en
+// estado PENDING sin tocar inventario; el administrador la aprueba (se aplica
+// el movimiento tipo BRANCH_TRANSFER, igual que inventory.transferStock) o la
+// rechaza. Una solicitud es de un solo producto por simplicidad del flujo.
+model BranchTransferRequest {
+  id String @id @default(uuid())
+
+  fromBranchId String
+  toBranchId   String
+  productId    String
+  quantity     Int
+
+  status RequestStatus @default(PENDING)
+
+  note            String?
+  // Vincula los dos InventoryMovement generados al aprobar (salida/entrada).
+  transferGroupId String?
+
+  requestedById String
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  fromBranch  Branch  @relation("TransferFromBranch", fields: [fromBranchId], references: [id])
+  toBranch    Branch  @relation("TransferToBranch", fields: [toBranchId], references: [id])
+  product     Product @relation(fields: [productId], references: [id])
+  requestedBy User    @relation("TransferRequestedBy", fields: [requestedById], references: [id])
+  resolvedBy  User?   @relation("TransferResolvedBy", fields: [resolvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([fromBranchId, status])
+}
+
+// #3 Pedido especial: repuesto que un cliente pide y que no se registra como
+// producto del inventario. Guarda el valor total, lo abonado y el saldo, y va
+// avanzando de estado. Los pagos (abono y saldo) viven en SpecialOrderPayment
+// para poder reflejarlos en el cierre de caja.
+model SpecialOrder {
+  id String @id @default(uuid())
+
+  customerName String
+  partName     String
+  description  String?
+
+  totalAmount     Decimal
+  depositedAmount Decimal @default(0)
+
+  status SpecialOrderStatus @default(DEPOSITED)
+
+  estimatedArrival DateTime?
+
+  branchId    String
+  createdById String
+
+  branch    Branch @relation(fields: [branchId], references: [id])
+  createdBy User   @relation(fields: [createdById], references: [id])
+
+  payments SpecialOrderPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([branchId, status])
+}
+
+// Cada movimiento de dinero de un pedido especial (abono inicial o saldo
+// final). Queda asociado a la caja abierta del momento para el cuadre.
+model SpecialOrderPayment {
+  id String @id @default(uuid())
+
+  specialOrderId String
+  amount         Decimal
+  paymentMethod  PaymentMethod
+  kind           SpecialOrderPaymentKind
+
+  cashSessionId String?
+
+  specialOrder SpecialOrder @relation(fields: [specialOrderId], references: [id], onDelete: Cascade)
+  cashSession  CashSession? @relation(fields: [cashSessionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([cashSessionId])
+}
+
+// #4 Ítem de la lista de "mercancía por comprar". Puede ser AUTO (sugerido por
+// el sistema según bajo stock/rotación, materializado al confirmarlo) o MANUAL
+// (agregado por un vendedor, con observaciones). productId es opcional para
+// permitir anotar algo que aún no existe como producto.
+model PurchaseListItem {
+  id String @id @default(uuid())
+
+  productId String?
+  // Texto libre para ítems sin producto asociado (p. ej. algo nuevo por pedir).
+  label     String?
+  note      String?
+
+  source   PurchaseListSource @default(MANUAL)
+  resolved Boolean            @default(false)
+
+  branchId    String?
+  createdById String
+
+  product   Product? @relation(fields: [productId], references: [id])
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resolved])
+}
+
+// #5 Solicitud de cambio de precio. El vendedor propone un nuevo precio con un
+// motivo; el precio del producto NO cambia hasta que el administrador aprueba.
+// Al aprobar se actualiza Product.salePrice y se registra quién y cuándo.
+model PriceChangeRequest {
+  id String @id @default(uuid())
+
+  productId      String
+  // Precio de venta vigente al momento de crear la solicitud (referencia).
+  currentPrice   Decimal
+  suggestedPrice Decimal
+  reason         String?
+
+  status RequestStatus @default(PENDING)
+
+  requestedById String
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  product     Product @relation(fields: [productId], references: [id])
+  requestedBy User    @relation("PriceRequestedBy", fields: [requestedById], references: [id])
+  resolvedBy  User?   @relation("PriceResolvedBy", fields: [resolvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }

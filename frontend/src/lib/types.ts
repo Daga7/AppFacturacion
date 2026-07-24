@@ -123,6 +123,13 @@ export interface CashSummary {
   transferReceived: number;
   loans: { count: number; total: number };
   discounts: { count: number; total: number };
+  specialOrders: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+  };
   expectedCash: number;
   difference: number | null;
 }
@@ -138,5 +145,114 @@ export interface DiscountDetail {
   discount: number;
   reason?: string | null;
   user: string;
+  createdAt: string;
+}
+
+// Estado compartido por solicitudes de traslado (#2) y de precio (#5).
+export type RequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export const requestStatusLabels: Record<RequestStatus, string> = {
+  PENDING: "Pendiente",
+  APPROVED: "Aprobada",
+  REJECTED: "Rechazada",
+};
+
+type UserRef = { id: string; username: string };
+
+// #2 Solicitud de traslado entre sucursales.
+export interface TransferRequest {
+  id: string;
+  fromBranchId: string;
+  toBranchId: string;
+  productId: string;
+  quantity: number;
+  status: RequestStatus;
+  note?: string | null;
+  requestedBy: UserRef;
+  resolvedBy?: UserRef | null;
+  resolvedAt?: string | null;
+  product: Product;
+  fromBranch: BranchInfo;
+  toBranch: BranchInfo;
+  createdAt: string;
+}
+
+// #3 Pedido especial.
+export type SpecialOrderStatus =
+  | "DEPOSITED"
+  | "ORDERED"
+  | "ARRIVED"
+  | "PICKED_UP";
+
+export const specialOrderStatusLabels: Record<SpecialOrderStatus, string> = {
+  DEPOSITED: "Abonado",
+  ORDERED: "Pedido hecho",
+  ARRIVED: "En el local",
+  PICKED_UP: "Recogido",
+};
+
+export interface SpecialOrderPayment {
+  id: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  kind: "DEPOSIT" | "FINAL";
+  createdAt: string;
+}
+
+export interface SpecialOrder {
+  id: string;
+  customerName: string;
+  partName: string;
+  description?: string | null;
+  totalAmount: number;
+  depositedAmount: number;
+  status: SpecialOrderStatus;
+  estimatedArrival?: string | null;
+  branch: BranchInfo;
+  createdBy: UserRef;
+  payments: SpecialOrderPayment[];
+  createdAt: string;
+}
+
+// #4 Lista de compras: ítem guardado y recomendación automática.
+export interface PurchaseListItem {
+  id: string;
+  productId?: string | null;
+  label?: string | null;
+  note?: string | null;
+  source: "MANUAL" | "AUTO";
+  resolved: boolean;
+  branchId?: string | null;
+  product?: Product | null;
+  branch?: BranchInfo | null;
+  createdBy: UserRef;
+  createdAt: string;
+}
+
+export interface PurchaseRecommendation {
+  productId: string;
+  productName: string;
+  categoryName: string;
+  branchId: string;
+  branchName: string;
+  currentStock: number;
+  soldLastPeriod: number;
+  dailyVelocity: number;
+  daysUntilEmpty: number | null;
+  reasons: string[];
+}
+
+// #5 Solicitud de cambio de precio.
+export interface PriceChangeRequest {
+  id: string;
+  productId: string;
+  currentPrice: number;
+  suggestedPrice: number;
+  reason?: string | null;
+  status: RequestStatus;
+  requestedBy: UserRef;
+  resolvedBy?: UserRef | null;
+  resolvedAt?: string | null;
+  product: Product;
   createdAt: string;
 }

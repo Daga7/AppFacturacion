@@ -55,11 +55,20 @@ export function CashSummaryView({ summary }: { summary: CashSummary }) {
         )}
         {row(`Préstamos realizados (${s.loans.count})`, formatMoney(s.loans.total), "text-yellow-400")}
         {row(`Descuentos aplicados (${s.discounts.count})`, formatMoney(s.discounts.total), "text-yellow-400")}
+        {s.specialOrders.count > 0 &&
+          row(
+            `Pedidos especiales (${s.specialOrders.count} · efectivo ${formatMoney(s.specialOrders.cash)})`,
+            formatMoney(s.specialOrders.total),
+            "text-emerald-400",
+          )}
       </div>
 
       <div className="bg-slate-800/50 rounded-lg p-4 space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-slate-300">Efectivo esperado (base + efectivo recibido)</span>
+          <span className="text-slate-300">
+            Efectivo esperado (base + efectivo recibido
+            {s.specialOrders.cash > 0 ? " + pedidos especiales" : ""})
+          </span>
           <span className="text-white font-semibold">{formatMoney(s.expectedCash)}</span>
         </div>
         {s.session.closingAmount != null && (

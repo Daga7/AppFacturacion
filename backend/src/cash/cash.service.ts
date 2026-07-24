@@ -31,6 +31,14 @@ export interface CashSummaryData {
   transferReceived: number;
   loans: { count: number; total: number };
   discounts: { count: number; total: number };
+  // Abonos y pagos de pedidos especiales cobrados durante el turno.
+  specialOrders: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+  };
   expectedCash: number;
   difference: number | null;
 }
@@ -135,6 +143,11 @@ export class CashService {
         `Transferencias: ${money(summary.transferReceived)} (Nequi ${money(summary.nequiReceived)} · Bancolombia ${money(summary.bancolombiaReceived)})`,
         `Préstamos: ${summary.loans.count} por ${money(summary.loans.total)}`,
         `Descuentos: ${summary.discounts.count} por ${money(summary.discounts.total)}`,
+        ...(summary.specialOrders.count > 0
+          ? [
+              `Pedidos especiales: ${summary.specialOrders.count} pago(s) por ${money(summary.specialOrders.total)} (efectivo ${money(summary.specialOrders.cash)})`,
+            ]
+          : []),
         '—————————————',
         `Efectivo esperado: ${money(summary.expectedCash)}`,
         `Efectivo contado: ${money(summary.session.closingAmount ?? 0)}`,
@@ -160,6 +173,7 @@ export class CashService {
             loan: true,
           },
         },
+        specialOrderPayments: true,
       },
     });
     if (!session) throw new NotFoundException('Sesión de caja no encontrada');
@@ -199,10 +213,23 @@ export class CashService {
       }
     }
 
+    // Pagos de pedidos especiales cobrados en este turno. El efectivo suma al
+    // esperado; Nequi/Bancolombia se reportan aparte (no afectan el conteo).
+    let soCash = 0;
+    let soNequi = 0;
+    let soBancolombia = 0;
+    for (const p of session.specialOrderPayments) {
+      const amount = Number(p.amount);
+      if (p.paymentMethod === 'CASH') soCash += amount;
+      else if (p.paymentMethod === 'NEQUI') soNequi += amount;
+      else soBancolombia += amount;
+    }
+    const soTotal = soCash + soNequi + soBancolombia;
+
     const openingAmount = Number(session.openingAmount);
     const closingAmount =
       session.closingAmount !== null ? Number(session.closingAmount) : null;
-    const expectedCash = openingAmount + cashReceived;
+    const expectedCash = openingAmount + cashReceived + soCash;
 
     const sessionData = {
       id: session.id,
@@ -226,6 +253,13 @@ export class CashService {
         transferReceived: round(nequiReceived + bancolombiaReceived),
         loans: { count: loansCount, total: round(loansTotal) },
         discounts: { count: discountsCount, total: round(discountsTotal) },
+        specialOrders: {
+          count: session.specialOrderPayments.length,
+          total: round(soTotal),
+          cash: round(soCash),
+          nequi: round(soNequi),
+          bancolombia: round(soBancolombia),
+        },
         expectedCash: round(expectedCash),
         difference:
           closingAmount !== null ? round(closingAmount - expectedCash) : null,
