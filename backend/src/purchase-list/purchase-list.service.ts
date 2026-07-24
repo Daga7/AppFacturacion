@@ -68,6 +68,7 @@ export class PurchaseListService {
       data: {
         productId: dto.productId || null,
         label: dto.label?.trim() || null,
+        quantity: dto.quantity,
         note: dto.note?.trim() || null,
         source: 'MANUAL',
         branchId: dto.branchId || branchId || null,
@@ -84,6 +85,7 @@ export class PurchaseListService {
   async addFromRecommendation(
     productId: string,
     branchId: string,
+    quantity: number,
     userId: string,
     note?: string,
   ) {
@@ -104,6 +106,7 @@ export class PurchaseListService {
     const item = await this.prisma.purchaseListItem.create({
       data: {
         productId,
+        quantity,
         note: note?.trim() || null,
         source: 'AUTO',
         branchId,

@@ -219,6 +219,7 @@ export interface PurchaseListItem {
   id: string;
   productId?: string | null;
   label?: string | null;
+  quantity?: number | null;
   note?: string | null;
   source: "MANUAL" | "AUTO";
   resolved: boolean;

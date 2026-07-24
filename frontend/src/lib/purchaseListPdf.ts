@@ -29,23 +29,25 @@ export async function downloadPurchaseListPdf(
   const itemName = (i: PurchaseListItem) =>
     i.product?.name ?? i.label ?? "—";
 
+  // Columnas pensadas para el proveedor: qué es, si lo sugirió el sistema o el
+  // vendedor, la observación y la cantidad a comprar.
   const rows = items.map((i) => [
     itemName(i),
     i.source === "AUTO" ? "Sugerido" : "Manual",
-    i.branch?.name ?? "—",
     i.note ?? "",
-    i.resolved ? "Comprado" : "Pendiente",
+    i.quantity != null ? String(i.quantity) : "—",
   ]);
 
   autoTable(doc, {
     startY: 37,
-    head: [["Producto", "Origen", "Sede", "Observación", "Estado"]],
+    head: [["Producto", "Origen", "Observaciones", "Cantidad"]],
     body: rows,
-    styles: { fontSize: 9, cellPadding: 3 },
+    styles: { fontSize: 10, cellPadding: 3 },
     headStyles: { fillColor: [30, 41, 59] }, // slate-800, coherente con la app
     columnStyles: {
-      0: { cellWidth: 55 },
-      3: { cellWidth: 50 },
+      0: { cellWidth: 65 },
+      2: { cellWidth: 60 },
+      3: { halign: "center", cellWidth: 25 },
     },
   });
 

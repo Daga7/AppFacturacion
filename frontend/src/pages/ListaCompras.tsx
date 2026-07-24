@@ -82,13 +82,21 @@ export default function ListaCompras() {
   }, [tab, loadItems, loadRecs]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Cantidad que el vendedor decide para cada sugerencia (clave sede:producto).
+  const [recQty, setRecQty] = useState<Record<string, string>>({});
+  const recKey = (r: PurchaseRecommendation) => `${r.branchId}:${r.productId}`;
+
   const addRecommendation = async (rec: PurchaseRecommendation) => {
+    const qty = Number(recQty[recKey(rec)] ?? "");
+    if (!qty || qty < 1)
+      return setError(`Indica la cantidad a comprar de "${rec.productName}"`);
     setBusyId(rec.productId);
     setError(null);
     try {
       await api.post("/purchase-list/from-recommendation", {
         productId: rec.productId,
         branchId: rec.branchId,
+        quantity: qty,
       });
       setSuccess(`"${rec.productName}" agregado a la lista`);
       loadRecs();
@@ -215,6 +223,11 @@ export default function ListaCompras() {
                       <p className={`font-medium ${i.resolved ? "text-slate-400 line-through" : "text-white"}`}>
                         {itemLabel(i)}
                       </p>
+                      {i.quantity != null && (
+                        <span className="text-xs font-semibold text-brand-light bg-brand/15 px-2 py-0.5 rounded-full">
+                          {i.quantity} u.
+                        </span>
+                      )}
                       <StatusBadge tone={i.source === "AUTO" ? "info" : "neutral"}>
                         {i.source === "AUTO" ? "Sugerido" : "Manual"}
                       </StatusBadge>
@@ -284,13 +297,30 @@ export default function ListaCompras() {
                     </div>
                   </div>
                   {canManage && (
-                    <button
-                      onClick={() => addRecommendation(r)}
-                      disabled={busyId === r.productId}
-                      className={`${ghostBtnCls} shrink-0`}
-                    >
-                      + Agregar
-                    </button>
+                    <div className="flex items-end gap-2 shrink-0">
+                      <div className="w-20">
+                        <label className="text-[11px] text-slate-500 block mb-1">
+                          Cantidad
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={recQty[recKey(r)] ?? ""}
+                          onChange={(e) =>
+                            setRecQty((m) => ({ ...m, [recKey(r)]: e.target.value }))
+                          }
+                          placeholder="0"
+                          className={`${inputCls} w-full`}
+                        />
+                      </div>
+                      <button
+                        onClick={() => addRecommendation(r)}
+                        disabled={busyId === r.productId}
+                        className={ghostBtnCls}
+                      >
+                        + Agregar
+                      </button>
+                    </div>
                   )}
                 </div>
               </Card>
@@ -316,6 +346,7 @@ function ManualItemForm({
   const [mode, setMode] = useState<"product" | "text">("product");
   const [productId, setProductId] = useState("");
   const [label, setLabel] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -323,16 +354,20 @@ function ManualItemForm({
     if (mode === "product" && !productId) return onError("Elige un producto");
     if (mode === "text" && !label.trim())
       return onError("Escribe qué hace falta comprar");
+    const qty = Number(quantity);
+    if (!qty || qty < 1) return onError("Indica la cantidad a comprar (mínimo 1)");
 
     setSaving(true);
     try {
       await api.post("/purchase-list", {
         productId: mode === "product" ? productId : undefined,
         label: mode === "text" ? label.trim() : undefined,
+        quantity: qty,
         note: note.trim() || undefined,
       });
       setProductId("");
       setLabel("");
+      setQuantity("1");
       setNote("");
       onSaved();
     } catch (err) {
@@ -367,12 +402,29 @@ function ManualItemForm({
         />
       )}
 
-      <input
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Observación (opcional)"
-        className={`${inputCls} w-full`}
-      />
+      <div className="flex gap-3">
+        <div className="w-28 shrink-0">
+          <label className="text-xs text-slate-500 block mb-1">Cantidad</label>
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className={`${inputCls} w-full`}
+          />
+        </div>
+        <div className="flex-1">
+          <label className="text-xs text-slate-500 block mb-1">
+            Observación (opcional)
+          </label>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Detalle para el proveedor"
+            className={`${inputCls} w-full`}
+          />
+        </div>
+      </div>
 
       <div className="flex justify-end">
         <button onClick={submit} disabled={saving} className={primaryBtnCls}>

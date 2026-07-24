@@ -509,6 +509,9 @@ model PurchaseListItem {
   // Texto libre para ítems sin producto asociado (p. ej. algo nuevo por pedir).
   label     String?
   note      String?
+  // Cantidad a comprar que decide el vendedor (obligatoria a nivel de app;
+  // opcional en BD para no romper filas creadas antes de este campo).
+  quantity  Int?
 
   source   PurchaseListSource @default(MANUAL)
   resolved Boolean            @default(false)

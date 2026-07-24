@@ -69,6 +69,7 @@ export class PurchaseListController {
     return this.service.addFromRecommendation(
       dto.productId,
       branchId,
+      dto.quantity,
       req.user.id,
       dto.note,
     );
