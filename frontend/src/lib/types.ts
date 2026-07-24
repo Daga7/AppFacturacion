@@ -206,6 +206,9 @@ export interface SpecialOrder {
   description?: string | null;
   totalAmount: number;
   depositedAmount: number;
+  // Costo del repuesto: solo llega en la respuesta para ADMIN (para los demás
+  // roles el backend lo omite). Se usa para la ganancia.
+  cost?: number | null;
   status: SpecialOrderStatus;
   estimatedArrival?: string | null;
   branch: BranchInfo;

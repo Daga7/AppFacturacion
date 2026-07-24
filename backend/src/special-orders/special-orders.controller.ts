@@ -42,13 +42,19 @@ export class SpecialOrdersController {
     @Query('branchId') branchId?: string,
     @Query('status') status?: SpecialOrderStatus,
   ) {
-    return this.service.findAll(scopedBranchId(req.user, branchId), status);
+    // El costo (y por ende la ganancia) solo lo ve el ADMIN.
+    const canSeeCost = req.user.role === 'ADMIN';
+    return this.service.findAll(
+      scopedBranchId(req.user, branchId),
+      status,
+      canSeeCost,
+    );
   }
 
   @Roles('ADMIN', 'SUPERVISOR', 'CASHIER')
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
+    return this.service.findOne(id, req.user.role === 'ADMIN');
   }
 
   @Roles('ADMIN', 'CASHIER')

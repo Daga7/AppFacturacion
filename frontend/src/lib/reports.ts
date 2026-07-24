@@ -35,6 +35,9 @@ export interface PaymentSummary {
 export interface GeneralSummary {
   period: ReportPeriod;
   summary: { totalRevenue: number; totalTickets: number; totalProfit: number };
+  // Ganancia de pedidos especiales entregados y costeados (incluida en
+  // totalProfit). Solo aparece en el informe general (perfil admin).
+  specialOrders: { count: number; profit: number };
   byMethod: PaymentMethodBreakdown;
   grandTotalPayments: number;
   byBranch: Record<string, { tickets: number; revenue: number }>;

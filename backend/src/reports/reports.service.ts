@@ -157,6 +157,25 @@ export class ReportsService {
       byBranch[branchName].revenue += Number(s.total);
     }
 
+    // Ganancia de pedidos especiales: solo los ya entregados (PICKED_UP) y con
+    // costo registrado por el admin. Ganancia = cobrado - costo. Los pedidos
+    // sin costo no cuentan (para no inflar con costo 0).
+    const specialOrders = await this.prisma.specialOrder.findMany({
+      where: {
+        status: 'PICKED_UP',
+        cost: { not: null },
+        updatedAt: { gte: since },
+      },
+      select: { totalAmount: true, cost: true },
+    });
+    let specialOrdersProfit = 0;
+    let specialOrdersCount = 0;
+    for (const so of specialOrders) {
+      specialOrdersProfit += Number(so.totalAmount) - Number(so.cost);
+      specialOrdersCount++;
+    }
+    totalProfit += specialOrdersProfit;
+
     const grandTotalPayments = Object.values(byMethod).reduce(
       (sum, m) => sum + m.total,
       0,
@@ -169,6 +188,10 @@ export class ReportsService {
         totalRevenue: round(totalRevenue),
         totalTickets,
         totalProfit: round(totalProfit),
+      },
+      specialOrders: {
+        count: specialOrdersCount,
+        profit: round(specialOrdersProfit),
       },
       byMethod: Object.fromEntries(
         Object.entries(byMethod).map(([k, v]) => [

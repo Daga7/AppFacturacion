@@ -292,6 +292,9 @@ function SpecialOrderEditForm({
   const [partName, setPartName] = useState(order.partName);
   const [description, setDescription] = useState(order.description ?? "");
   const [totalAmount, setTotalAmount] = useState(String(order.totalAmount));
+  const [cost, setCost] = useState(
+    order.cost != null ? String(order.cost) : "",
+  );
   const [estimatedArrival, setEstimatedArrival] = useState(
     order.estimatedArrival ? order.estimatedArrival.slice(0, 10) : "",
   );
@@ -317,6 +320,8 @@ function SpecialOrderEditForm({
         partName: partName.trim(),
         description: description.trim(),
         totalAmount: total,
+        // Solo se envía si el admin escribió un costo (campo vacío = no tocar).
+        cost: cost.trim() !== "" ? Number(cost) : undefined,
         estimatedArrival: estimatedArrival
           ? new Date(estimatedArrival).toISOString()
           : undefined,
@@ -381,6 +386,40 @@ function SpecialOrderEditForm({
             className={`${inputCls} w-full`}
           />
         </div>
+      </div>
+
+      {/* Costo: solo el admin llega a este formulario, así que este campo es
+          privado. Muestra la ganancia estimada en vivo. */}
+      <div className="border-t border-slate-800 pt-4">
+        <label className={labelCls}>Costo del repuesto (privado)</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="number"
+            min={0}
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+            placeholder="Cuánto costó conseguirlo"
+            className={`${inputCls} w-full sm:w-52`}
+          />
+          {cost.trim() !== "" && Number(totalAmount) > 0 && (
+            <span className="text-sm">
+              <span className="text-slate-500">Ganancia: </span>
+              <span
+                className={
+                  Number(totalAmount) - Number(cost) >= 0
+                    ? "text-emerald-400 font-semibold"
+                    : "text-red-400 font-semibold"
+                }
+              >
+                {formatMoney(Number(totalAmount) - Number(cost))}
+              </span>
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-slate-600 mt-1">
+          Solo tú ves este dato. La ganancia cuenta en Informes cuando el pedido
+          se entrega.
+        </p>
       </div>
 
       <div className="flex gap-2 justify-end">

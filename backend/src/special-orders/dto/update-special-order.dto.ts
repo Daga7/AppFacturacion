@@ -31,6 +31,13 @@ export class UpdateSpecialOrderDto {
   @IsOptional()
   totalAmount?: number;
 
+  // Costo del repuesto: solo lo envía el ADMIN (el controller ya restringe el
+  // endpoint a admin). Se permite 0 para "sin costo".
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  cost?: number;
+
   @IsDateString()
   @IsOptional()
   estimatedArrival?: string;

@@ -459,6 +459,9 @@ model SpecialOrder {
 
   totalAmount     Decimal
   depositedAmount Decimal @default(0)
+  // Costo del repuesto (lo que le costó al negocio conseguirlo). Solo lo
+  // ingresa/ve el ADMIN; se usa para la ganancia. Opcional: null = sin costear.
+  cost            Decimal?
 
   status SpecialOrderStatus @default(DEPOSITED)
 

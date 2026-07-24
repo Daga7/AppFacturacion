@@ -126,16 +126,34 @@ export class SpecialOrdersService {
         ...(dto.totalAmount !== undefined
           ? { totalAmount: dto.totalAmount }
           : {}),
+        ...(dto.cost !== undefined ? { cost: dto.cost } : {}),
         ...(dto.estimatedArrival !== undefined
           ? { estimatedArrival: new Date(dto.estimatedArrival) }
           : {}),
       },
     });
 
-    return this.findOne(id);
+    // Quien edita es admin, así que puede ver el costo.
+    return this.findOne(id, true);
   }
 
-  async findAll(branchId?: string, status?: SpecialOrderStatus) {
+  // El costo es información sensible: solo el ADMIN puede verlo. Para los demás
+  // roles se elimina de la respuesta (defensa a nivel de datos, no solo de UI).
+  private stripCost<T extends { cost?: unknown }>(
+    order: T,
+    canSeeCost: boolean,
+  ): T {
+    if (canSeeCost) return order;
+    const copy = { ...order };
+    delete copy.cost;
+    return copy;
+  }
+
+  async findAll(
+    branchId?: string,
+    status?: SpecialOrderStatus,
+    canSeeCost = false,
+  ) {
     const orders = await this.prisma.specialOrder.findMany({
       where: {
         ...(branchId ? { branchId } : {}),
@@ -144,16 +162,20 @@ export class SpecialOrdersService {
       include: ORDER_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
-    return JSON.parse(JSON.stringify(orders)) as typeof orders;
+    const serialized = JSON.parse(JSON.stringify(orders)) as typeof orders;
+    return serialized.map((o) => this.stripCost(o, canSeeCost));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, canSeeCost = false) {
     const order = await this.prisma.specialOrder.findUnique({
       where: { id },
       include: ORDER_INCLUDE,
     });
     if (!order) throw new NotFoundException('Pedido especial no encontrado');
-    return JSON.parse(JSON.stringify(order)) as NonNullable<typeof order>;
+    const serialized = JSON.parse(JSON.stringify(order)) as NonNullable<
+      typeof order
+    >;
+    return this.stripCost(serialized, canSeeCost);
   }
 
   // Registra un abono/pago. El monto no puede superar el saldo pendiente. Si

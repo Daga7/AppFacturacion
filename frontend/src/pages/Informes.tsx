@@ -142,7 +142,11 @@ export default function Informes() {
               <StatCard
                 label="Ganancias en total"
                 value={formatMoney(general.summary.totalProfit)}
-                hint="venta menos costo de compra · clic para ver el detalle"
+                hint={
+                  general.specialOrders.count > 0
+                    ? `incluye ${formatMoney(general.specialOrders.profit)} de ${general.specialOrders.count} pedido(s) especial(es) · clic para el detalle`
+                    : "venta menos costo de compra · clic para ver el detalle"
+                }
                 tone="info"
                 onClick={toggleProfitTable}
               />
