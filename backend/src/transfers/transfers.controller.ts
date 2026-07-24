@@ -8,17 +8,14 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
 import { RequestStatus } from '@prisma/client';
 import { TransfersService } from './transfers.service';
 import { CreateTransferRequestDto } from './dto/create-transfer-request.dto';
 import { ResolveTransferRequestDto } from './dto/resolve-transfer-request.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
-
-interface RequestWithUser extends ExpressRequest {
-  user: { id: string; username: string; role: string; branchId: string };
-}
+import { scopedBranchId } from '../auth/request-user';
+import type { RequestWithUser } from '../auth/request-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('transfers')
@@ -33,9 +30,8 @@ export class TransfersController {
     @Body() dto: CreateTransferRequestDto,
     @Request() req: RequestWithUser,
   ) {
-    if (req.user.role === 'CASHIER') {
-      dto.fromBranchId = req.user.branchId;
-    }
+    // El vendedor solo puede originar traslados desde su propia sede.
+    dto.fromBranchId = scopedBranchId(req.user, dto.fromBranchId)!;
     return this.transfersService.create(dto, req.user.id);
   }
 
@@ -48,9 +44,10 @@ export class TransfersController {
     @Query('status') status?: RequestStatus,
     @Query('fromBranchId') fromBranchId?: string,
   ) {
-    const scopedBranch =
-      req.user.role === 'CASHIER' ? req.user.branchId : fromBranchId;
-    return this.transfersService.findAll(status, scopedBranch);
+    return this.transfersService.findAll(
+      status,
+      scopedBranchId(req.user, fromBranchId),
+    );
   }
 
   @Roles('ADMIN', 'SUPERVISOR', 'CASHIER')

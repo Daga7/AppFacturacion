@@ -12,11 +12,13 @@ const baseNavItems = [
 
 // Módulos de gestión (solicitudes y pedidos) que ADMIN y vendedor comparten,
 // cada uno con su vista según el rol.
+// Íconos monocromáticos de la misma familia geométrica que los base (◉ ⊞ ⊡ ⊟)
+// para que no se rendericen como emoji a color y desalineen el texto.
 const requestNavItems = [
   { to: "/traslados", label: "Traslados", icon: "⇄" },
-  { to: "/pedidos-especiales", label: "Pedidos especiales", icon: "★" },
-  { to: "/lista-compras", label: "Lista de compras", icon: "☑" },
-  { to: "/solicitudes-precio", label: "Solicitudes de precio", icon: "＄" },
+  { to: "/pedidos-especiales", label: "Pedidos especiales", icon: "◈" },
+  { to: "/lista-compras", label: "Lista de compras", icon: "▤" },
+  { to: "/solicitudes-precio", label: "Solicitudes de precio", icon: "⊗" },
 ];
 
 export default function Layout() {

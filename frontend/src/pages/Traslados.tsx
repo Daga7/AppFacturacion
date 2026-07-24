@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
-import type {
-  BranchInfo,
-  Product,
-  TransferRequest,
-  RequestStatus,
-} from "../lib/types";
+import type { BranchInfo, Product, TransferRequest } from "../lib/types";
 import { formatDateTime } from "../lib/format";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
@@ -15,14 +10,13 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { TabPills } from "../components/ui/TabPills";
 import { ProductSelect } from "../components/ui/ProductSelect";
 import { RequestStatusBadge } from "../components/ui/RequestStatusBadge";
+import { useRequestList, requestStatusTabs } from "../hooks/useRequestList";
 import {
   inputCls,
   primaryBtnCls,
   ghostBtnCls,
   secondaryBtnCls,
 } from "../components/ui/inputs";
-
-type StatusFilter = RequestStatus | "ALL";
 
 // Módulo de traslados entre sucursales. El vendedor crea solicitudes (quedan
 // PENDING sin mover inventario); el administrador aprueba (aplica el traslado)
@@ -32,27 +26,27 @@ export default function Traslados() {
   const isAdmin = user?.role === "ADMIN";
   const isCashier = user?.role === "CASHIER";
 
-  const [requests, setRequests] = useState<TransferRequest[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<BranchInfo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<StatusFilter>(isAdmin ? "PENDING" : "ALL");
   const [showForm, setShowForm] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const loadRequests = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = filter === "ALL" ? "" : `?status=${filter}`;
-      setRequests(await api.get<TransferRequest[]>(`/transfers${q}`));
-    } catch {
-      setError("Error al cargar las solicitudes");
-    }
-    setLoading(false);
-  }, [filter]);
+  const {
+    items: requests,
+    loading,
+    filter,
+    setFilter,
+    busyId,
+    error,
+    setError,
+    success,
+    setSuccess,
+    reload,
+    resolve,
+  } = useRequestList<TransferRequest>({
+    resource: "/transfers",
+    initialFilter: isAdmin ? "PENDING" : "ALL",
+    approveMessage: "Traslado aprobado y aplicado al inventario",
+  });
 
   const loadCatalogs = useCallback(async () => {
     try {
@@ -65,40 +59,15 @@ export default function Traslados() {
     } catch {
       setError("Error al cargar productos o sucursales");
     }
-  }, []);
+  }, [setError]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadCatalogs();
   }, [loadCatalogs]);
-  useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const resolve = async (id: string, action: "approve" | "reject") => {
-    setBusyId(id);
-    setError(null);
-    try {
-      await api.post(`/transfers/${id}/${action}`, {});
-      setSuccess(
-        action === "approve"
-          ? "Traslado aprobado y aplicado al inventario"
-          : "Solicitud rechazada",
-      );
-      loadRequests();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo procesar");
-    }
-    setBusyId(null);
-  };
-
-  const statusTabs: { key: StatusFilter; label: string }[] = [
-    { key: "PENDING", label: "Pendientes" },
-    { key: "APPROVED", label: "Aprobadas" },
-    { key: "REJECTED", label: "Rechazadas" },
-    { key: "ALL", label: "Todas" },
-  ];
+  const statusTabs = requestStatusTabs;
 
   return (
     <div>
@@ -131,7 +100,7 @@ export default function Traslados() {
             onSaved={() => {
               setShowForm(false);
               setSuccess("Solicitud de traslado creada");
-              loadRequests();
+              reload();
             }}
             onError={setError}
           />

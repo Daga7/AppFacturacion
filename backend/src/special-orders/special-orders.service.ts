@@ -6,6 +6,7 @@ import {
 import { SpecialOrderStatus, SpecialOrderPaymentKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSpecialOrderDto } from './dto/create-special-order.dto';
+import { UpdateSpecialOrderDto } from './dto/update-special-order.dto';
 import { AddPaymentDto } from './dto/add-payment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 
@@ -93,6 +94,45 @@ export class SpecialOrdersService {
     });
 
     return this.findOne(order.id);
+  }
+
+  // Edición de datos (solo ADMIN a nivel de controller). No toca estado ni
+  // pagos. Si se cambia el total, no puede quedar por debajo de lo abonado.
+  async update(id: string, dto: UpdateSpecialOrderDto) {
+    const order = await this.prisma.specialOrder.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Pedido especial no encontrado');
+
+    if (dto.totalAmount !== undefined) {
+      const deposited = Number(order.depositedAmount);
+      if (dto.totalAmount < deposited - 0.01) {
+        throw new BadRequestException(
+          `El total (${dto.totalAmount}) no puede ser menor que lo ya abonado (${deposited})`,
+        );
+      }
+    }
+
+    await this.prisma.specialOrder.update({
+      where: { id },
+      data: {
+        ...(dto.customerName !== undefined
+          ? { customerName: dto.customerName.trim() }
+          : {}),
+        ...(dto.partName !== undefined
+          ? { partName: dto.partName.trim() }
+          : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description.trim() || null }
+          : {}),
+        ...(dto.totalAmount !== undefined
+          ? { totalAmount: dto.totalAmount }
+          : {}),
+        ...(dto.estimatedArrival !== undefined
+          ? { estimatedArrival: new Date(dto.estimatedArrival) }
+          : {}),
+      },
+    });
+
+    return this.findOne(id);
   }
 
   async findAll(branchId?: string, status?: SpecialOrderStatus) {

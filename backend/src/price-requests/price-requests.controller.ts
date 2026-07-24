@@ -8,16 +8,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
 import { RequestStatus } from '@prisma/client';
 import { PriceRequestsService } from './price-requests.service';
 import { CreatePriceRequestDto } from './dto/create-price-request.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
-
-interface RequestWithUser extends ExpressRequest {
-  user: { id: string; username: string; role: string; branchId: string };
-}
+import type { RequestWithUser } from '../auth/request-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('price-requests')

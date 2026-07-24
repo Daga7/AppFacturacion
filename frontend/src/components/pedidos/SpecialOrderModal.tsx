@@ -31,16 +31,19 @@ const statusTone: Record<SpecialOrderStatus, BadgeTone> = {
 const methods: PaymentMethod[] = ["CASH", "NEQUI", "BANCOLOMBIA"];
 
 // Detalle de un pedido especial: datos, pagos, registrar abono/saldo y avanzar
-// el estado. `readOnly` (supervisor) oculta las acciones.
+// el estado. `readOnly` (supervisor) oculta las acciones; `canEdit` (admin)
+// habilita la edición de los datos del pedido.
 export function SpecialOrderModal({
   order,
   readOnly = false,
+  canEdit = false,
   onClose,
   onChanged,
   onError,
 }: {
   order: SpecialOrder;
   readOnly?: boolean;
+  canEdit?: boolean;
   onClose: () => void;
   onChanged: (msg: string) => void;
   onError: (msg: string) => void;
@@ -48,6 +51,7 @@ export function SpecialOrderModal({
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("CASH");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const total = Number(order.totalAmount);
   const deposited = Number(order.depositedAmount);
@@ -85,6 +89,23 @@ export function SpecialOrderModal({
     setBusy(false);
   };
 
+  // Modo edición (solo admin): formulario de datos del pedido.
+  if (editing) {
+    return (
+      <Modal title="Editar pedido" onClose={onClose} maxWidth="max-w-lg">
+        <SpecialOrderEditForm
+          order={order}
+          onCancel={() => setEditing(false)}
+          onSaved={(msg) => {
+            setEditing(false);
+            onChanged(msg);
+          }}
+          onError={onError}
+        />
+      </Modal>
+    );
+  }
+
   return (
     <Modal title={order.partName} onClose={onClose} maxWidth="max-w-lg">
       <div className="space-y-4">
@@ -95,9 +116,19 @@ export function SpecialOrderModal({
               {order.branch.name} · creado por {order.createdBy.username}
             </p>
           </div>
-          <StatusBadge tone={statusTone[order.status]}>
-            {specialOrderStatusLabels[order.status]}
-          </StatusBadge>
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <button
+                onClick={() => setEditing(true)}
+                className="text-xs text-slate-400 hover:text-white underline"
+              >
+                Editar
+              </button>
+            )}
+            <StatusBadge tone={statusTone[order.status]}>
+              {specialOrderStatusLabels[order.status]}
+            </StatusBadge>
+          </div>
         </div>
 
         {order.description && (
@@ -240,5 +271,126 @@ export function SpecialOrderModal({
         </p>
       </div>
     </Modal>
+  );
+}
+
+// Formulario de edición de datos del pedido (solo admin). No toca pagos ni
+// estado. El total no puede quedar por debajo de lo abonado (validado también
+// en el backend).
+function SpecialOrderEditForm({
+  order,
+  onCancel,
+  onSaved,
+  onError,
+}: {
+  order: SpecialOrder;
+  onCancel: () => void;
+  onSaved: (msg: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [customerName, setCustomerName] = useState(order.customerName);
+  const [partName, setPartName] = useState(order.partName);
+  const [description, setDescription] = useState(order.description ?? "");
+  const [totalAmount, setTotalAmount] = useState(String(order.totalAmount));
+  const [estimatedArrival, setEstimatedArrival] = useState(
+    order.estimatedArrival ? order.estimatedArrival.slice(0, 10) : "",
+  );
+  const [saving, setSaving] = useState(false);
+
+  const deposited = Number(order.depositedAmount);
+  const labelCls = "text-xs text-slate-500 block mb-1";
+
+  const submit = async () => {
+    if (!customerName.trim()) return onError("Ingresa el nombre del cliente");
+    if (!partName.trim()) return onError("Ingresa el nombre del repuesto");
+    const total = Number(totalAmount);
+    if (!total || total <= 0) return onError("Ingresa el valor total del pedido");
+    if (total < deposited)
+      return onError(
+        `El total no puede ser menor que lo ya abonado (${formatMoney(deposited)})`,
+      );
+
+    setSaving(true);
+    try {
+      await api.patch(`/special-orders/${order.id}`, {
+        customerName: customerName.trim(),
+        partName: partName.trim(),
+        description: description.trim(),
+        totalAmount: total,
+        estimatedArrival: estimatedArrival
+          ? new Date(estimatedArrival).toISOString()
+          : undefined,
+      });
+      onSaved("Pedido actualizado");
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "No se pudo actualizar");
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelCls}>Cliente</label>
+          <input
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            className={`${inputCls} w-full`}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Repuesto</label>
+          <input
+            value={partName}
+            onChange={(e) => setPartName(e.target.value)}
+            className={`${inputCls} w-full`}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className={labelCls}>Descripción / observaciones</label>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className={`${inputCls} w-full`}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelCls}>Valor total</label>
+          <input
+            type="number"
+            min={0}
+            value={totalAmount}
+            onChange={(e) => setTotalAmount(e.target.value)}
+            className={`${inputCls} w-full`}
+          />
+          <p className="text-xs text-slate-600 mt-1">
+            Abonado: {formatMoney(deposited)}
+          </p>
+        </div>
+        <div>
+          <label className={labelCls}>Fecha estimada de llegada</label>
+          <input
+            type="date"
+            value={estimatedArrival}
+            onChange={(e) => setEstimatedArrival(e.target.value)}
+            className={`${inputCls} w-full`}
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <button onClick={onCancel} className={secondaryBtnCls} disabled={saving}>
+          Cancelar
+        </button>
+        <button onClick={submit} className={primaryBtnCls} disabled={saving}>
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+      </div>
+    </div>
   );
 }

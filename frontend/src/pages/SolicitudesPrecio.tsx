@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
-import type { Product, PriceChangeRequest, RequestStatus } from "../lib/types";
+import type { Product, PriceChangeRequest } from "../lib/types";
 import { formatMoney, formatDateTime } from "../lib/format";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
@@ -10,14 +10,13 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { TabPills } from "../components/ui/TabPills";
 import { ProductSelect } from "../components/ui/ProductSelect";
 import { RequestStatusBadge } from "../components/ui/RequestStatusBadge";
+import { useRequestList, requestStatusTabs } from "../hooks/useRequestList";
 import {
   inputCls,
   primaryBtnCls,
   ghostBtnCls,
   secondaryBtnCls,
 } from "../components/ui/inputs";
-
-type StatusFilter = RequestStatus | "ALL";
 
 // Solicitudes de cambio de precio. El vendedor propone un precio con un motivo;
 // el precio NO cambia hasta que el administrador aprueba. Al aprobar se
@@ -27,68 +26,46 @@ export default function SolicitudesPrecio() {
   const isAdmin = user?.role === "ADMIN";
   const isCashier = user?.role === "CASHIER";
 
-  const [requests, setRequests] = useState<PriceChangeRequest[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<StatusFilter>(isAdmin ? "PENDING" : "ALL");
   const [showForm, setShowForm] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const loadRequests = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = filter === "ALL" ? "" : `?status=${filter}`;
-      setRequests(await api.get<PriceChangeRequest[]>(`/price-requests${q}`));
-    } catch {
-      setError("Error al cargar las solicitudes");
-    }
-    setLoading(false);
-  }, [filter]);
 
   const loadProducts = useCallback(async () => {
     try {
       setProducts(await api.get<Product[]>("/products"));
     } catch {
-      setError("Error al cargar productos");
+      /* no bloquea la lista */
     }
   }, []);
+
+  const {
+    items: requests,
+    loading,
+    filter,
+    setFilter,
+    busyId,
+    error,
+    setError,
+    success,
+    setSuccess,
+    reload,
+    resolve,
+  } = useRequestList<PriceChangeRequest>({
+    resource: "/price-requests",
+    initialFilter: isAdmin ? "PENDING" : "ALL",
+    approveMessage: "Precio actualizado y solicitud aprobada",
+    // Tras aprobar, el precio del producto cambió: recargar el catálogo.
+    onResolved: (action) => {
+      if (action === "approve") loadProducts();
+    },
+  });
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
-  useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const resolve = async (id: string, action: "approve" | "reject") => {
-    setBusyId(id);
-    setError(null);
-    try {
-      await api.post(`/price-requests/${id}/${action}`, {});
-      setSuccess(
-        action === "approve"
-          ? "Precio actualizado y solicitud aprobada"
-          : "Solicitud rechazada",
-      );
-      loadRequests();
-      if (action === "approve") loadProducts();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo procesar");
-    }
-    setBusyId(null);
-  };
-
-  const statusTabs: { key: StatusFilter; label: string }[] = [
-    { key: "PENDING", label: "Pendientes" },
-    { key: "APPROVED", label: "Aprobadas" },
-    { key: "REJECTED", label: "Rechazadas" },
-    { key: "ALL", label: "Todas" },
-  ];
+  const statusTabs = requestStatusTabs;
 
   return (
     <div>
@@ -118,7 +95,7 @@ export default function SolicitudesPrecio() {
             onSaved={() => {
               setShowForm(false);
               setSuccess("Solicitud enviada");
-              loadRequests();
+              reload();
             }}
             onError={setError}
           />

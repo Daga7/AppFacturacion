@@ -7,6 +7,7 @@ import type {
   PurchaseRecommendation,
 } from "../lib/types";
 import { formatDate } from "../lib/format";
+import { downloadPurchaseListPdf } from "../lib/purchaseListPdf";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
 import { Alert } from "../components/ui/Alert";
@@ -121,6 +122,25 @@ export default function ListaCompras() {
     setBusyId(null);
   };
 
+  // Descarga la lista visible en PDF (para enviarla). Trae siempre la versión
+  // pendiente fresca, sin depender del toggle "ver comprados".
+  const [downloading, setDownloading] = useState(false);
+  const downloadPdf = async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const data = await api.get<PurchaseListItem[]>("/purchase-list");
+      if (data.length === 0) {
+        setError("No hay ítems pendientes para exportar");
+      } else {
+        await downloadPurchaseListPdf(data, user?.branchName);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo generar el PDF");
+    }
+    setDownloading(false);
+  };
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "lista", label: "Lista de compras" },
     { key: "sugerencias", label: "Sugerencias del sistema" },
@@ -133,7 +153,17 @@ export default function ListaCompras() {
       <PageHeader
         title="Lista de compras"
         subtitle="Qué mercancía hace falta comprar, combinando el sistema y tu experiencia."
-      />
+      >
+        {tab === "lista" && (
+          <button
+            onClick={downloadPdf}
+            disabled={downloading}
+            className={ghostBtnCls}
+          >
+            {downloading ? "Generando…" : "Descargar PDF"}
+          </button>
+        )}
+      </PageHeader>
 
       {error && <Alert kind="error" message={error} onClose={() => setError(null)} />}
       {success && <Alert kind="success" message={success} onClose={() => setSuccess(null)} />}

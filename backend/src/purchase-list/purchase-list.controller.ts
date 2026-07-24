@@ -10,16 +10,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
 import { PurchaseListService } from './purchase-list.service';
 import { CreatePurchaseItemDto } from './dto/create-purchase-item.dto';
 import { AddRecommendationDto } from './dto/add-recommendation.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
-
-interface RequestWithUser extends ExpressRequest {
-  user: { id: string; username: string; role: string; branchId: string };
-}
+import { scopedBranchId } from '../auth/request-user';
+import type { RequestWithUser } from '../auth/request-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('purchase-list')
@@ -34,8 +31,7 @@ export class PurchaseListController {
     @Request() req: RequestWithUser,
     @Query('branchId') branchId?: string,
   ) {
-    const scoped = req.user.role === 'CASHIER' ? req.user.branchId : branchId;
-    return this.service.recommendations(scoped);
+    return this.service.recommendations(scopedBranchId(req.user, branchId));
   }
 
   @Roles('ADMIN', 'SUPERVISOR', 'CASHIER')
@@ -45,17 +41,21 @@ export class PurchaseListController {
     @Query('branchId') branchId?: string,
     @Query('includeResolved') includeResolved?: string,
   ) {
-    const scoped = req.user.role === 'CASHIER' ? req.user.branchId : branchId;
-    return this.service.findAll(scoped, includeResolved === 'true');
+    return this.service.findAll(
+      scopedBranchId(req.user, branchId),
+      includeResolved === 'true',
+    );
   }
 
   // El vendedor agrega un ítem manual (queda en su sede).
   @Roles('ADMIN', 'CASHIER')
   @Post()
   create(@Body() dto: CreatePurchaseItemDto, @Request() req: RequestWithUser) {
-    const branchId =
-      req.user.role === 'CASHIER' ? req.user.branchId : dto.branchId;
-    return this.service.create(dto, req.user.id, branchId);
+    return this.service.create(
+      dto,
+      req.user.id,
+      scopedBranchId(req.user, dto.branchId),
+    );
   }
 
   @Roles('ADMIN', 'CASHIER')
@@ -64,8 +64,8 @@ export class PurchaseListController {
     @Body() dto: AddRecommendationDto,
     @Request() req: RequestWithUser,
   ) {
-    const branchId =
-      req.user.role === 'CASHIER' ? req.user.branchId : dto.branchId;
+    // dto.branchId es obligatorio en el DTO, así que el scope siempre resuelve.
+    const branchId = scopedBranchId(req.user, dto.branchId)!;
     return this.service.addFromRecommendation(
       dto.productId,
       branchId,

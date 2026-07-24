@@ -9,18 +9,16 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
 import { SpecialOrderStatus } from '@prisma/client';
 import { SpecialOrdersService } from './special-orders.service';
 import { CreateSpecialOrderDto } from './dto/create-special-order.dto';
+import { UpdateSpecialOrderDto } from './dto/update-special-order.dto';
 import { AddPaymentDto } from './dto/add-payment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
-
-interface RequestWithUser extends ExpressRequest {
-  user: { id: string; username: string; role: string; branchId: string };
-}
+import { scopedBranchId } from '../auth/request-user';
+import type { RequestWithUser } from '../auth/request-user';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('special-orders')
@@ -31,10 +29,7 @@ export class SpecialOrdersController {
   @Roles('ADMIN', 'CASHIER')
   @Post()
   create(@Body() dto: CreateSpecialOrderDto, @Request() req: RequestWithUser) {
-    const branchId =
-      req.user.role === 'CASHIER'
-        ? req.user.branchId
-        : (dto.branchId ?? req.user.branchId);
+    const branchId = scopedBranchId(req.user, dto.branchId, req.user.branchId)!;
     return this.service.create(dto, req.user.id, branchId);
   }
 
@@ -47,8 +42,7 @@ export class SpecialOrdersController {
     @Query('branchId') branchId?: string,
     @Query('status') status?: SpecialOrderStatus,
   ) {
-    const scoped = req.user.role === 'CASHIER' ? req.user.branchId : branchId;
-    return this.service.findAll(scoped, status);
+    return this.service.findAll(scopedBranchId(req.user, branchId), status);
   }
 
   @Roles('ADMIN', 'SUPERVISOR', 'CASHIER')
@@ -61,6 +55,13 @@ export class SpecialOrdersController {
   @Post(':id/payments')
   addPayment(@Param('id') id: string, @Body() dto: AddPaymentDto) {
     return this.service.addPayment(id, dto);
+  }
+
+  // Editar datos del pedido: solo ADMIN.
+  @Roles('ADMIN')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateSpecialOrderDto) {
+    return this.service.update(id, dto);
   }
 
   @Roles('ADMIN', 'CASHIER')

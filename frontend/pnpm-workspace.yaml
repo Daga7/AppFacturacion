@@ -1,0 +1,5 @@
+# core-js trae un script de postinstall (telemetría) que no necesitamos;
+# jsPDF funciona sin ejecutarlo. Se ignora para no correr scripts de
+# subdependencias transitivas.
+allowBuilds:
+  core-js: false

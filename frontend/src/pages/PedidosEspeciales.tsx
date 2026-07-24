@@ -40,6 +40,7 @@ const statusTone: Record<SpecialOrderStatus, BadgeTone> = {
 export default function PedidosEspeciales() {
   const user = useAuthStore((s) => s.user);
   const isSupervisor = user?.role === "SUPERVISOR";
+  const isAdmin = user?.role === "ADMIN";
   const canManage = !isSupervisor;
 
   const [orders, setOrders] = useState<SpecialOrder[]>([]);
@@ -168,6 +169,7 @@ export default function PedidosEspeciales() {
         <SpecialOrderModal
           order={selected}
           readOnly={!canManage}
+          canEdit={isAdmin}
           onClose={() => setSelected(null)}
           onError={setError}
           onChanged={(msg) => {
