@@ -28,6 +28,13 @@ export class TransfersService {
   async create(dto: CreateTransferRequestDto, userId: string) {
     const { fromBranchId, toBranchId, productId, quantity, note } = dto;
 
+    // El controlador rellena fromBranchId con la sede del usuario (siempre para
+    // el vendedor). Si llegara vacío (p. ej. un admin que no la indica), no hay
+    // origen válido para el traslado.
+    if (!fromBranchId) {
+      throw new BadRequestException('Falta la sucursal de origen');
+    }
+
     if (fromBranchId === toBranchId) {
       throw new BadRequestException(
         'La sucursal de origen y destino deben ser distintas',
