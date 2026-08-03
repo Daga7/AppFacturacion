@@ -16,6 +16,8 @@ interface Product {
   barcode: string;
   purchasePrice: number;
   salePrice: number;
+  retailPrice: number;
+  wholesalePrice: number;
   isActive: boolean;
   category: Category;
   inventories?: { amount: number; branchId: string; branch: { id: string; name: string } }[];
@@ -41,7 +43,7 @@ type Tab = "productos" | "categorias" | "stock" | "movimientos";
 type StockAction = "in" | "out" | "transfer" | null;
 type MovType = "STOCK_IN" | "STOCK_OUT" | "BRANCH_TRANSFER";
 
-type ProductForm = { name: string; barcode: string; purchasePrice: string; salePrice: string; categoryId: string; isActive: boolean };
+type ProductForm = { name: string; barcode: string; purchasePrice: string; salePrice: string; retailPrice: string; wholesalePrice: string; categoryId: string; isActive: boolean };
 type CategoryForm = { name: string };
 type ItemRow = { productId: string; barcode: string; quantity: string };
 type MovementForm = { branchId: string; note: string; items: ItemRow[] };
@@ -61,7 +63,7 @@ type MovementRow = {
   editable: boolean;
 };
 
-const emptyProduct: ProductForm = { name: "", barcode: "", purchasePrice: "0", salePrice: "0", categoryId: "", isActive: true };
+const emptyProduct: ProductForm = { name: "", barcode: "", purchasePrice: "0", salePrice: "0", retailPrice: "", wholesalePrice: "", categoryId: "", isActive: true };
 const emptyCategory: CategoryForm = { name: "" };
 const emptyItemRow = (): ItemRow => ({ productId: "", barcode: "", quantity: "" });
 const emptyMovement: MovementForm = { branchId: "", note: "", items: [emptyItemRow()] };
@@ -166,7 +168,20 @@ export default function Inventario() {
 
   const handleSaveProduct = async () => {
     try {
-      const payload = { ...productForm, purchasePrice: +productForm.purchasePrice, salePrice: +productForm.salePrice };
+      // Los dos precios de venta son obligatorios y deben ser mayores a 0.
+      const retailPrice = parseFloat(productForm.retailPrice);
+      const wholesalePrice = parseFloat(productForm.wholesalePrice);
+      if (!(retailPrice > 0)) {
+        setError("El precio detal es obligatorio y debe ser mayor a 0");
+        return;
+      }
+      if (!(wholesalePrice > 0)) {
+        setError("El precio mayor es obligatorio y debe ser mayor a 0");
+        return;
+      }
+      setError(null);
+
+      const payload = { ...productForm, purchasePrice: +productForm.purchasePrice, salePrice: +productForm.salePrice, retailPrice, wholesalePrice };
       if (editingProduct) {
         await api.patch(`/products/${editingProduct.id}`, payload);
       } else {
@@ -212,6 +227,8 @@ export default function Inventario() {
       barcode: p.barcode,
       purchasePrice: String(p.purchasePrice),
       salePrice: String(p.salePrice),
+      retailPrice: String(p.retailPrice ?? ""),
+      wholesalePrice: String(p.wholesalePrice ?? ""),
       categoryId: p.category.id,
       isActive: p.isActive,
     });
@@ -609,6 +626,8 @@ export default function Inventario() {
             <th className="pb-3 font-medium">Categoría</th>
             <th className="pb-3 font-medium text-right">P. Compra</th>
             <th className="pb-3 font-medium text-right">P. Venta</th>
+            <th className="pb-3 font-medium text-right">P. Mayor</th>
+            <th className="pb-3 font-medium text-right">P. Detal</th>
             <th className="pb-3 font-medium">Stock</th>
             <th className="pb-3 font-medium"></th>
           </tr>
@@ -621,6 +640,8 @@ export default function Inventario() {
               <td className="py-3 text-slate-400">{p.category.name}</td>
               <td className="py-3 text-right text-slate-300">${p.purchasePrice}</td>
               <td className="py-3 text-right text-slate-300">${p.salePrice}</td>
+              <td className="py-3 text-right text-slate-300">${p.wholesalePrice}</td>
+              <td className="py-3 text-right text-slate-300">${p.retailPrice}</td>
               <td className="py-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full ${amount > 5 ? "bg-emerald-900/30 text-emerald-400" : amount > 0 ? "bg-yellow-900/30 text-yellow-400" : "bg-red-900/30 text-red-400"}`}>
                   {amount}
@@ -740,6 +761,8 @@ export default function Inventario() {
                 </select>
                 <input type="number" step="0.01" placeholder="Precio compra" value={productForm.purchasePrice} onChange={(e) => setProductForm({ ...productForm, purchasePrice: e.target.value })} className={inputCls} />
                 <input type="number" step="0.01" placeholder="Precio venta" value={productForm.salePrice} onChange={(e) => setProductForm({ ...productForm, salePrice: e.target.value })} className={inputCls} />
+                <input type="number" step="0.01" min="0.01" required placeholder="Precio mayor *" value={productForm.wholesalePrice} onChange={(e) => setProductForm({ ...productForm, wholesalePrice: e.target.value })} className={inputCls} />
+                <input type="number" step="0.01" min="0.01" required placeholder="Precio detal *" value={productForm.retailPrice} onChange={(e) => setProductForm({ ...productForm, retailPrice: e.target.value })} className={inputCls} />
               </div>
               <div className="flex gap-2">
                 <button onClick={handleSaveProduct} className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium">Guardar</button>

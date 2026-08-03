@@ -1,7 +1,13 @@
 import type { Product } from "../../lib/types";
 import { formatMoney } from "../../lib/format";
 import { inputCls } from "../ui/inputs";
-import { emptySaleLine, lineSubtotal, type SaleLine } from "./saleLines";
+import {
+  emptySaleLine,
+  lineSubtotal,
+  priceFor,
+  type PriceType,
+  type SaleLine,
+} from "./saleLines";
 
 // Editor reutilizable de líneas de productos. Se escanea o escribe el código
 // de barras y los datos del producto (nombre y precio) se cargan solos.
@@ -32,7 +38,18 @@ export function ProductLinesEditor({
     update(i, {
       barcode,
       productId: product?.id ?? "",
-      unitPrice: product ? String(product.salePrice) : lines[i].unitPrice,
+      unitPrice: product
+        ? String(priceFor(product, lines[i].priceType))
+        : lines[i].unitPrice,
+    });
+  };
+
+  // Al cambiar entre Mayor y Detal se recalcula el precio de esa linea.
+  const handlePriceType = (i: number, priceType: PriceType) => {
+    const product = products.find((p) => p.id === lines[i].productId);
+    update(i, {
+      priceType,
+      unitPrice: product ? String(priceFor(product, priceType)) : lines[i].unitPrice,
     });
   };
 
@@ -49,6 +66,7 @@ export function ProductLinesEditor({
         <span className={`${labelCls} w-44`}>Código de barras</span>
         <span className={`${labelCls} flex-1 min-w-40`}>Producto</span>
         <span className={`${labelCls} w-20`}>Cantidad</span>
+        <span className={`${labelCls} w-32`}>Tipo precio</span>
         <span className={`${labelCls} w-28`}>Precio</span>
         {showDiscount && <span className={`${labelCls} w-24`}>Desc. (opcional)</span>}
         <span className={`${labelCls} w-24 text-right`}>Subtotal</span>
@@ -89,6 +107,23 @@ export function ProductLinesEditor({
               onChange={(e) => update(i, { quantity: e.target.value })}
               className={`${inputCls} w-20`}
             />
+            <div className="flex w-32 rounded-lg overflow-hidden border border-slate-800">
+              {(["MAYOR", "DETAL"] as PriceType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handlePriceType(i, type)}
+                  aria-pressed={line.priceType === type}
+                  className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+                    line.priceType === type
+                      ? "bg-brand text-white"
+                      : "bg-slate-800/60 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {type === "MAYOR" ? "Mayor" : "Detal"}
+                </button>
+              ))}
+            </div>
             <input
               type="number"
               min="0"

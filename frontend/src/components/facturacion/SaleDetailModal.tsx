@@ -46,6 +46,9 @@ export function SaleDetailModal({
         unitPrice: String(d.unitPrice),
         discount: String(d.discount),
         discountReason: d.discountReason ?? "",
+        // Se conserva el unitPrice historico ya cobrado; el tipo solo es la
+        // etiqueta por defecto si el admin decide recalcular la linea.
+        priceType: "MAYOR" as const,
       })),
     );
     setPayments(

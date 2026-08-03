@@ -16,6 +16,8 @@ export interface Product {
   barcode: string;
   purchasePrice: number;
   salePrice: number;
+  retailPrice: number;
+  wholesalePrice: number;
   isActive: boolean;
   category: Category;
   inventories?: { amount: number; branchId: string; branch: BranchInfo }[];

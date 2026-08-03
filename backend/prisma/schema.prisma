@@ -207,6 +207,11 @@ model Product {
   purchasePrice Decimal
   salePrice     Decimal
 
+  // Precios de venta segun el tipo de cliente. En el checkout se elige uno de
+  // los dos por linea y el valor elegido se congela en SaleDetail.unitPrice.
+  retailPrice    Decimal @map("precio_detal")
+  wholesalePrice Decimal @map("precio_mayor")
+
   isActive Boolean @default(true)
 
   categoryId String
