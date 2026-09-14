@@ -10,3 +10,6 @@ export const secondaryBtnCls =
 
 export const ghostBtnCls =
   "px-4 py-2 bg-brand/20 text-brand-light rounded-lg text-sm font-medium hover:bg-brand/30 transition-colors";
+
+export const dangerBtnCls =
+  "px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-500 transition-colors disabled:opacity-50";

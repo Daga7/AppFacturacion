@@ -19,6 +19,7 @@ import { LoansList } from "../components/facturacion/LoansList";
 import { LoanDetailModal } from "../components/facturacion/LoanDetailModal";
 import { CustomerForm } from "../components/facturacion/CustomerForm";
 import { CustomersList } from "../components/facturacion/CustomersList";
+import { CustomerEditModal } from "../components/facturacion/CustomerEditModal";
 import { PendingCustomersList, type CustomerDebt } from "../components/facturacion/PendingCustomersList";
 import { CustomerLoansModal } from "../components/facturacion/CustomerLoansModal";
 import { SalesHistory } from "../components/facturacion/SalesHistory";
@@ -60,6 +61,7 @@ export default function Facturacion() {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [selectedDebt, setSelectedDebt] = useState<CustomerDebt | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -261,7 +263,10 @@ export default function Facturacion() {
 
           <div>
             <h3 className="text-sm font-medium text-slate-400 mb-3">Clientes registrados</h3>
-            <CustomersList customers={customers} />
+            <CustomersList
+              customers={customers}
+              onSelect={isAdmin ? (c) => setEditingCustomer(c) : undefined}
+            />
           </div>
 
           <div>
@@ -307,6 +312,24 @@ export default function Facturacion() {
           onClose={() => setSelectedLoan(null)}
           onChanged={() => {
             setSuccess("Abono registrado");
+            loadLoans();
+          }}
+        />
+      )}
+
+      {editingCustomer && (
+        <CustomerEditModal
+          customer={editingCustomer}
+          onClose={() => setEditingCustomer(null)}
+          onSaved={() => {
+            setEditingCustomer(null);
+            setSuccess("Cliente actualizado");
+            loadCustomers();
+          }}
+          onDeleted={() => {
+            setEditingCustomer(null);
+            setSuccess("Cliente y su historial fueron borrados");
+            loadCustomers();
             loadLoans();
           }}
         />

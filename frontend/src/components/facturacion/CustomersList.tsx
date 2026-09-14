@@ -3,13 +3,23 @@ import { Card } from "../ui/Card";
 import { StatusBadge } from "../ui/StatusBadge";
 import { EmptyState } from "../ui/EmptyState";
 
-export function CustomersList({ customers }: { customers: Customer[] }) {
+interface CustomersListProps {
+  customers: Customer[];
+  // Si se pasa, cada cliente es clickeable (lo usa el admin para editar/borrar).
+  onSelect?: (customer: Customer) => void;
+}
+
+export function CustomersList({ customers, onSelect }: CustomersListProps) {
   if (customers.length === 0) return <EmptyState message="No hay clientes registrados" />;
 
   return (
     <div className="space-y-2">
       {customers.map((c) => (
-        <Card key={c.id} className="p-4 flex items-center justify-between gap-3">
+        <Card
+          key={c.id}
+          onClick={onSelect ? () => onSelect(c) : undefined}
+          className="p-4 flex items-center justify-between gap-3"
+        >
           <div className="min-w-0">
             <p className="text-white font-medium truncate">
               {c.firstName} {c.lastName ?? ""}

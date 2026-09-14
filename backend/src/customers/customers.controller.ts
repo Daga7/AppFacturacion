@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -34,5 +35,13 @@ export class CustomersController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateCustomerDto) {
     return this.customersService.update(id, dto);
+  }
+
+  // Borrado total: cliente + ventas + préstamos + todo lo enlazado. Solo
+  // ADMIN, es irreversible.
+  @Roles('ADMIN')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.customersService.remove(id);
   }
 }
