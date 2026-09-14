@@ -11,6 +11,7 @@ import { TabPills } from "../components/ui/TabPills";
 import { Alert } from "../components/ui/Alert";
 import { ghostBtnCls } from "../components/ui/inputs";
 import { SaleForm } from "../components/facturacion/SaleForm";
+import type { SaleMode } from "../components/facturacion/saleLines";
 import { SalesList } from "../components/facturacion/SalesList";
 import { SaleDetailModal } from "../components/facturacion/SaleDetailModal";
 import { LoanForm } from "../components/facturacion/LoanForm";
@@ -54,7 +55,8 @@ export default function Facturacion() {
   const [todaySales, setTodaySales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [showSaleForm, setShowSaleForm] = useState(false);
+  // null = ningún formulario abierto; si no, la modalidad de venta en curso.
+  const [saleMode, setSaleMode] = useState<SaleMode | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [selectedDebt, setSelectedDebt] = useState<CustomerDebt | null>(null);
@@ -186,23 +188,36 @@ export default function Facturacion() {
         <>
       {tab === "facturacion" && (
         <div className="space-y-4">
-          {!showSaleForm && (
-            <button onClick={() => { setShowSaleForm(true); setSuccess(null); }} className={ghostBtnCls}>
-              + Nueva venta
-            </button>
+          {!saleMode && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setSaleMode("MAYOR"); setSuccess(null); }}
+                className={ghostBtnCls}
+              >
+                + Venta al por mayor
+              </button>
+              <button
+                onClick={() => { setSaleMode("DETAL"); setSuccess(null); }}
+                className={ghostBtnCls}
+              >
+                + Venta al detal
+              </button>
+            </div>
           )}
 
-          {showSaleForm && (
+          {saleMode && (
             <SaleForm
+              key={saleMode}
+              mode={saleMode}
               branchId={branchId}
               products={products}
               availability={(productId) => stockOf(branchId, productId)}
               onSaved={(sale) => {
-                setShowSaleForm(false);
+                setSaleMode(null);
                 setSuccess(`Venta ${invoiceCode(sale.invoiceNumber)} registrada`);
                 refreshAfterSale();
               }}
-              onCancel={() => setShowSaleForm(false)}
+              onCancel={() => setSaleMode(null)}
             />
           )}
 

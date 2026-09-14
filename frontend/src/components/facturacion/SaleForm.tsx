@@ -5,7 +5,13 @@ import { formatMoney } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { primaryBtnCls, secondaryBtnCls } from "../ui/inputs";
 import { ProductLinesEditor } from "./ProductLinesEditor";
-import { emptySaleLine, linesTotal, parseLines, type SaleLine } from "./saleLines";
+import {
+  emptySaleLine,
+  linesTotal,
+  parseLines,
+  type SaleLine,
+  type SaleMode,
+} from "./saleLines";
 import { PaymentsEditor } from "./PaymentsEditor";
 import { emptyPayment, paymentsTotal, parsePayments, type PaymentLine } from "./paymentLines";
 
@@ -15,11 +21,21 @@ interface SaleFormProps {
   availability: (productId: string) => number;
   onSaved: (sale: Sale) => void;
   onCancel: () => void;
+  mode?: SaleMode;
 }
 
 // Formulario de Nueva Venta (contado). Compone los editores de productos y
 // pagos; lo usan vendedor y administrador por igual.
-export function SaleForm({ branchId, products, availability, onSaved, onCancel }: SaleFormProps) {
+// El modo decide de dónde sale el precio: de la base de datos (mayor) o
+// digitado por el cajero (detal).
+export function SaleForm({
+  branchId,
+  products,
+  availability,
+  onSaved,
+  onCancel,
+  mode = "MAYOR",
+}: SaleFormProps) {
   const [lines, setLines] = useState<SaleLine[]>([emptySaleLine()]);
   const [payments, setPayments] = useState<PaymentLine[]>([emptyPayment()]);
   const [saving, setSaving] = useState(false);
@@ -53,13 +69,23 @@ export function SaleForm({ branchId, products, availability, onSaved, onCancel }
 
   return (
     <Card className="p-4 space-y-4">
-      <h4 className="text-white font-medium">Nueva venta</h4>
+      <div>
+        <h4 className="text-white font-medium">
+          {mode === "DETAL" ? "Venta al detal" : "Venta al por mayor"}
+        </h4>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {mode === "DETAL"
+            ? "Escribe el precio de cada producto."
+            : "Los precios se cargan desde la base de datos."}
+        </p>
+      </div>
 
       <ProductLinesEditor
         products={products}
         lines={lines}
         onChange={setLines}
         availability={availability}
+        mode={mode}
       />
 
       <div className="flex items-center justify-between border-t border-slate-800 pt-3">

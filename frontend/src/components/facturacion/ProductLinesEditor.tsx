@@ -4,14 +4,17 @@ import { inputCls } from "../ui/inputs";
 import {
   emptySaleLine,
   lineSubtotal,
-  priceFor,
-  type PriceType,
+  wholesalePriceOf,
   type SaleLine,
+  type SaleMode,
 } from "./saleLines";
 
 // Editor reutilizable de líneas de productos. Se escanea o escribe el código
-// de barras y los datos del producto (nombre y precio) se cargan solos.
+// de barras y los datos del producto se cargan solos.
 // Lo comparten Nueva Venta, Generar Préstamo y la edición de ventas del admin.
+//
+// El modo lo fija el formulario completo, no cada línea: en MAYOR el precio
+// llega de la base de datos al escanear; en DETAL lo digita el cajero.
 
 interface ProductLinesEditorProps {
   products: Product[];
@@ -19,6 +22,7 @@ interface ProductLinesEditorProps {
   onChange: (lines: SaleLine[]) => void;
   availability?: (productId: string) => number;
   showDiscount?: boolean;
+  mode?: SaleMode;
 }
 
 export function ProductLinesEditor({
@@ -27,29 +31,23 @@ export function ProductLinesEditor({
   onChange,
   availability,
   showDiscount = true,
+  mode = "MAYOR",
 }: ProductLinesEditorProps) {
   const update = (i: number, patch: Partial<SaleLine>) =>
     onChange(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
 
   // Al escanear/escribir el código se busca el producto y se autocompletan
   // sus datos; si deja de coincidir, la línea queda sin producto.
+  // En venta al detal el precio queda vacío para que el cajero lo escriba.
   const handleBarcode = (i: number, barcode: string) => {
     const product = products.find((p) => p.barcode === barcode.trim());
     update(i, {
       barcode,
       productId: product?.id ?? "",
-      unitPrice: product
-        ? String(priceFor(product, lines[i].priceType))
-        : lines[i].unitPrice,
-    });
-  };
-
-  // Al cambiar entre Mayor y Detal se recalcula el precio de esa linea.
-  const handlePriceType = (i: number, priceType: PriceType) => {
-    const product = products.find((p) => p.id === lines[i].productId);
-    update(i, {
-      priceType,
-      unitPrice: product ? String(priceFor(product, priceType)) : lines[i].unitPrice,
+      unitPrice:
+        mode === "MAYOR" && product
+          ? String(wholesalePriceOf(product))
+          : lines[i].unitPrice,
     });
   };
 
@@ -66,8 +64,9 @@ export function ProductLinesEditor({
         <span className={`${labelCls} w-44`}>Código de barras</span>
         <span className={`${labelCls} flex-1 min-w-40`}>Producto</span>
         <span className={`${labelCls} w-20`}>Cantidad</span>
-        <span className={`${labelCls} w-32`}>Tipo precio</span>
-        <span className={`${labelCls} w-28`}>Precio</span>
+        <span className={`${labelCls} w-28`}>
+          {mode === "DETAL" ? "Precio (manual)" : "Precio"}
+        </span>
         {showDiscount && <span className={`${labelCls} w-24`}>Desc. (opcional)</span>}
         <span className={`${labelCls} w-24 text-right`}>Subtotal</span>
         {lines.length > 1 && <span className="w-6" />}
@@ -107,31 +106,19 @@ export function ProductLinesEditor({
               onChange={(e) => update(i, { quantity: e.target.value })}
               className={`${inputCls} w-20`}
             />
-            <div className="flex w-32 rounded-lg overflow-hidden border border-slate-800">
-              {(["MAYOR", "DETAL"] as PriceType[]).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handlePriceType(i, type)}
-                  aria-pressed={line.priceType === type}
-                  className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
-                    line.priceType === type
-                      ? "bg-brand text-white"
-                      : "bg-slate-800/60 text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {type === "MAYOR" ? "Mayor" : "Detal"}
-                </button>
-              ))}
-            </div>
             <input
               type="number"
               min="0"
               step="0.01"
-              placeholder="Precio"
+              placeholder={mode === "DETAL" ? "Escribe el precio" : "Precio"}
               value={line.unitPrice}
               onChange={(e) => update(i, { unitPrice: e.target.value })}
-              className={`${inputCls} w-28`}
+              autoFocus={mode === "DETAL" && !!line.productId && !line.unitPrice}
+              className={`${inputCls} w-28 ${
+                mode === "DETAL" && line.productId && !line.unitPrice
+                  ? "border-amber-500/60"
+                  : ""
+              }`}
             />
             {showDiscount && (
               <input

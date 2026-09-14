@@ -1,8 +1,10 @@
 // Modelo y helpers de las líneas de producto de una venta/préstamo.
 // Separados del componente editor para poder reutilizarlos en formularios.
 
-// Tipo de precio con el que se cobra una linea. Por defecto siempre "MAYOR".
-export type PriceType = "MAYOR" | "DETAL";
+// Modalidad de la venta completa, elegida al abrir el formulario:
+//   MAYOR → el precio sale de la base de datos al escanear.
+//   DETAL → el cajero digita el precio de cada producto.
+export type SaleMode = "MAYOR" | "DETAL";
 
 export interface SaleLine {
   productId: string;
@@ -11,7 +13,6 @@ export interface SaleLine {
   unitPrice: string;
   discount: string;
   discountReason: string;
-  priceType: PriceType;
 }
 
 export const emptySaleLine = (): SaleLine => ({
@@ -21,18 +22,14 @@ export const emptySaleLine = (): SaleLine => ({
   unitPrice: "",
   discount: "0",
   discountReason: "",
-  priceType: "MAYOR",
 });
 
-// Precio del producto segun el tipo elegido. Si el producto todavia no tiene
-// los precios nuevos cargados, cae al salePrice historico.
-export const priceFor = (
-  product: { retailPrice?: number; wholesalePrice?: number; salePrice: number },
-  type: PriceType,
-): number => {
-  const value = type === "DETAL" ? product.retailPrice : product.wholesalePrice;
-  return value ?? product.salePrice;
-};
+// Precio al por mayor del producto. Si todavia no lo tiene cargado, cae al
+// salePrice historico.
+export const wholesalePriceOf = (product: {
+  wholesalePrice?: number;
+  salePrice: number;
+}): number => product.wholesalePrice ?? product.salePrice;
 
 export const lineSubtotal = (l: SaleLine) => {
   const qty = parseInt(l.quantity, 10) || 0;
