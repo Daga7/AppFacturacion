@@ -267,6 +267,7 @@ model CashSession {
 
   sales                Sale[]
   specialOrderPayments SpecialOrderPayment[]
+  loanPayments         LoanPayment[]
 
   openedAt DateTime  @default(now())
   closedAt DateTime?
@@ -378,7 +379,14 @@ model LoanPayment {
   paymentMethod PaymentMethod
   loan          Loan          @relation(fields: [loanId], references: [id])
 
+  // Turno de caja en el que se recibió el abono; permite incluirlo en el
+  // cierre y en el informe de Telegram.
+  cashSessionId String?
+  cashSession   CashSession? @relation(fields: [cashSessionId], references: [id])
+
   createdAt DateTime @default(now())
+
+  @@index([cashSessionId])
 }
 
 model InventoryMovement {

@@ -227,11 +227,21 @@ export class LoansService {
   }
 
   async addPayment(loanId: string, dto: CreateLoanPaymentDto) {
-    const loan = await this.prisma.loan.findUnique({ where: { id: loanId } });
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: loanId },
+      include: { sale: { select: { branchId: true } } },
+    });
     if (!loan) throw new NotFoundException('Préstamo no encontrado');
     if (loan.loanStatus === 'PAID') {
       throw new BadRequestException('El préstamo ya está pagado');
     }
+
+    // El abono entra a la caja abierta de la sede donde se hizo el préstamo,
+    // para que aparezca en el cierre y en el informe de Telegram.
+    const openSession = await this.prisma.cashSession.findFirst({
+      where: { branchId: loan.sale.branchId, status: 'OPEN' },
+      select: { id: true },
+    });
 
     const pending = Number(loan.pendingAmount);
     if (dto.amount > pending + 0.01) {
@@ -248,6 +258,7 @@ export class LoansService {
           loanId,
           amount: dto.amount,
           paymentMethod: dto.paymentMethod,
+          cashSessionId: openSession?.id ?? null,
         },
       });
 

@@ -132,8 +132,28 @@ export interface CashSummary {
     nequi: number;
     bancolombia: number;
   };
+  // Abonos a préstamos recibidos en el turno: los clientes que pagaron
+  // mercancía pendiente.
+  loanPayments: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+    rows: LoanPaymentRow[];
+  };
   expectedCash: number;
   difference: number | null;
+}
+
+export interface LoanPaymentRow {
+  customerName: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  pendingAfter: number;
+  settled: boolean;
+  products: string;
+  createdAt: string;
 }
 
 export interface DiscountDetail {

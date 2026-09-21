@@ -39,8 +39,30 @@ export interface CashSummaryData {
     nequi: number;
     bancolombia: number;
   };
+  // Abonos a préstamos recibidos durante el turno, con el detalle por cliente
+  // para el informe de Telegram.
+  loanPayments: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+    rows: LoanPaymentRow[];
+  };
   expectedCash: number;
   difference: number | null;
+}
+
+// Una línea del listado "clientes que pagaron mercancía pendiente".
+export interface LoanPaymentRow {
+  customerName: string;
+  amount: number;
+  paymentMethod: string;
+  // Saldo que le queda al préstamo después del abono.
+  pendingAfter: number;
+  settled: boolean;
+  products: string;
+  createdAt: string;
 }
 
 const money = (n: number | string) =>
@@ -148,6 +170,7 @@ export class CashService {
               `Pedidos especiales: ${summary.specialOrders.count} pago(s) por ${money(summary.specialOrders.total)} (efectivo ${money(summary.specialOrders.cash)})`,
             ]
           : []),
+        ...this.loanPaymentsLines(summary),
         '—————————————',
         `Efectivo esperado: ${money(summary.expectedCash)}`,
         `Efectivo contado: ${money(summary.session.closingAmount ?? 0)}`,
@@ -156,6 +179,34 @@ export class CashService {
     );
 
     return summary;
+  }
+
+  // Bloque del informe de Telegram con los clientes que pagaron o abonaron
+  // mercancía pendiente durante el turno. Se listan uno por uno con lo que
+  // pagaron y el saldo que les queda; si no hubo abonos, no se agrega nada.
+  private loanPaymentsLines(summary: CashSummaryData): string[] {
+    const lp = summary.loanPayments;
+    if (lp.count === 0) return [];
+
+    const methodLabels: Record<string, string> = {
+      CASH: 'efectivo',
+      NEQUI: 'Nequi',
+      BANCOLOMBIA: 'Bancolombia',
+    };
+
+    return [
+      '—————————————',
+      `💰 ABONOS DE CLIENTES: ${lp.count} por ${money(lp.total)}`,
+      `(efectivo ${money(lp.cash)} · Nequi ${money(lp.nequi)} · Bancolombia ${money(lp.bancolombia)})`,
+      ...lp.rows.map((r) => {
+        const method = methodLabels[r.paymentMethod] ?? r.paymentMethod;
+        const estado = r.settled
+          ? '✅ quedó al día'
+          : `queda debiendo ${money(r.pendingAfter)}`;
+        const productos = r.products ? ` — ${r.products}` : '';
+        return `• ${r.customerName}: ${money(r.amount)} en ${method}, ${estado}${productos}`;
+      }),
+    ];
   }
 
   // Resumen del turno: base, efectivo contado, ventas, medios de pago,
@@ -174,6 +225,17 @@ export class CashService {
           },
         },
         specialOrderPayments: true,
+        loanPayments: {
+          include: {
+            loan: {
+              include: {
+                customer: true,
+                sale: { include: { details: { include: { product: true } } } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
     if (!session) throw new NotFoundException('Sesión de caja no encontrada');
@@ -226,10 +288,39 @@ export class CashService {
     }
     const soTotal = soCash + soNequi + soBancolombia;
 
+    // Abonos a préstamos cobrados en este turno: los clientes que pagaron
+    // mercancía pendiente. El efectivo suma al esperado en caja.
+    let lpCash = 0;
+    let lpNequi = 0;
+    let lpBancolombia = 0;
+    const loanPaymentRows: LoanPaymentRow[] = [];
+    for (const p of session.loanPayments) {
+      const amount = Number(p.amount);
+      if (p.paymentMethod === 'CASH') lpCash += amount;
+      else if (p.paymentMethod === 'NEQUI') lpNequi += amount;
+      else lpBancolombia += amount;
+
+      const customer = p.loan.customer;
+      const pendingAfter = Number(p.loan.pendingAmount);
+      loanPaymentRows.push({
+        customerName:
+          `${customer.firstName} ${customer.lastName ?? ''}`.trim() || '—',
+        amount: round(amount),
+        paymentMethod: p.paymentMethod,
+        pendingAfter: round(pendingAfter),
+        settled: p.loan.loanStatus === 'PAID',
+        products: p.loan.sale.details
+          .map((d) => `${d.quantity} × ${d.product.name}`)
+          .join(', '),
+        createdAt: p.createdAt.toISOString(),
+      });
+    }
+    const lpTotal = lpCash + lpNequi + lpBancolombia;
+
     const openingAmount = Number(session.openingAmount);
     const closingAmount =
       session.closingAmount !== null ? Number(session.closingAmount) : null;
-    const expectedCash = openingAmount + cashReceived + soCash;
+    const expectedCash = openingAmount + cashReceived + soCash + lpCash;
 
     const sessionData = {
       id: session.id,
@@ -259,6 +350,14 @@ export class CashService {
           cash: round(soCash),
           nequi: round(soNequi),
           bancolombia: round(soBancolombia),
+        },
+        loanPayments: {
+          count: session.loanPayments.length,
+          total: round(lpTotal),
+          cash: round(lpCash),
+          nequi: round(lpNequi),
+          bancolombia: round(lpBancolombia),
+          rows: loanPaymentRows,
         },
         expectedCash: round(expectedCash),
         difference:

@@ -6,7 +6,7 @@ import { useBranchStore } from "../stores/branch";
 import { BranchSelector } from "../components/BranchSelector";
 import { Card } from "../components/ui/Card";
 import type { BranchInfo, Customer, Loan, Product, Sale } from "../lib/types";
-import { invoiceCode } from "../lib/format";
+import { invoiceCode, todayStartISO, todayEndISO } from "../lib/format";
 import { TabPills } from "../components/ui/TabPills";
 import { Alert } from "../components/ui/Alert";
 import { ghostBtnCls } from "../components/ui/inputs";
@@ -25,12 +25,6 @@ import { CustomerLoansModal } from "../components/facturacion/CustomerLoansModal
 import { SalesHistory } from "../components/facturacion/SalesHistory";
 
 type Tab = "facturacion" | "prestamos" | "pendientes" | "ventas";
-
-const todayStart = () => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-};
 
 export default function Facturacion() {
   const user = useAuthStore((s) => s.user);
@@ -104,12 +98,19 @@ export default function Facturacion() {
     } catch { setError("Error al cargar préstamos"); }
   }, [branchId]);
 
+  // "Ventas de hoy" = el día calendario en Colombia, acotado por ambos
+  // extremos, para que se vea igual desde cualquier dispositivo. Se pide sin
+  // caché porque el service worker guarda las respuestas de la API y podría
+  // devolver una lista vieja tras vender desde otro aparato.
   const loadTodaySales = useCallback(async () => {
     if (!branchId) return;
     setLoading(true);
     try {
       setTodaySales(
-        await api.get<Sale[]>(`/sales?branchId=${branchId}&from=${todayStart()}&limit=200`),
+        await api.get<Sale[]>(
+          `/sales?branchId=${branchId}&from=${todayStartISO()}&to=${todayEndISO()}&limit=200`,
+          { fresh: true },
+        ),
       );
     } catch { setError("Error al cargar las ventas de hoy"); }
     setLoading(false);

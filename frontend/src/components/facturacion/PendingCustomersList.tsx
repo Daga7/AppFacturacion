@@ -1,5 +1,7 @@
+import { useState } from "react";
 import type { Customer, Loan } from "../../lib/types";
 import { formatMoney } from "../../lib/format";
+import { downloadCustomerDebtPdf } from "../../lib/customerDebtPdf";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 
@@ -40,6 +42,31 @@ export function PendingCustomersList({ loans, onSelect }: PendingCustomersListPr
 
   if (debts.length === 0) return <EmptyState message="No hay clientes con préstamos activos" />;
 
+  return <DebtCards debts={debts} onSelect={onSelect} />;
+}
+
+// Tarjetas de deuda, cada una con su botón para descargar el estado de cuenta
+// del cliente en PDF y enviárselo.
+function DebtCards({ debts, onSelect }: { debts: CustomerDebt[]; onSelect: (debt: CustomerDebt) => void }) {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const download = async (debt: CustomerDebt) => {
+    setDownloadingId(debt.customer.id);
+    try {
+      await downloadCustomerDebtPdf(
+        `${debt.customer.firstName} ${debt.customer.lastName ?? ""}`.trim(),
+        debt.loans,
+        {
+          phone: debt.customer.phone,
+          branchName: debt.loans[0]?.sale?.branch.name,
+        },
+      );
+    } catch {
+      alert("No se pudo generar el PDF");
+    }
+    setDownloadingId(null);
+  };
+
   return (
     <div className="space-y-2">
       {debts.map((debt) => (
@@ -61,6 +88,19 @@ export function PendingCustomersList({ loans, onSelect }: PendingCustomersListPr
             <p className="text-xs text-slate-500">Monto pendiente</p>
             <p className="text-lg font-bold text-white">{formatMoney(debt.totalPending)}</p>
           </div>
+          <button
+            onClick={(e) => {
+              // No abrir el modal al descargar.
+              e.stopPropagation();
+              download(debt);
+            }}
+            disabled={downloadingId === debt.customer.id}
+            title="Descargar la lista de lo que debe"
+            aria-label={`Descargar la lista de lo que debe ${debt.customer.firstName}`}
+            className="shrink-0 px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+          >
+            {downloadingId === debt.customer.id ? "..." : "⬇ PDF"}
+          </button>
         </Card>
       ))}
     </div>

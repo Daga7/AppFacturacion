@@ -43,8 +43,18 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+// `fresh: true` esquiva la caché del service worker (y la del navegador) para
+// los datos que deben verse al instante en todos los dispositivos, como las
+// ventas del día: sin esto, tras abonar o vender desde otro aparato la PWA
+// puede seguir mostrando la respuesta guardada por el service worker.
 export const api = {
-  get: <T>(url: string) => request<T>(url),
+  get: <T>(url: string, opts?: { fresh?: boolean }) =>
+    opts?.fresh
+      ? request<T>(url, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        })
+      : request<T>(url),
   post: <T>(url: string, data?: unknown) =>
     request<T>(url, { method: "POST", body: JSON.stringify(data) }),
   patch: <T>(url: string, data?: unknown) =>

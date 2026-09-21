@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../../lib/api";
 import type { CashSummary, DiscountDetail } from "../../lib/types";
+import { paymentMethodLabels } from "../../lib/types";
 import { formatMoney, formatDateTime, formatTime, invoiceCode } from "../../lib/format";
 import { ghostBtnCls } from "../ui/inputs";
 
@@ -61,13 +62,46 @@ export function CashSummaryView({ summary }: { summary: CashSummary }) {
             formatMoney(s.specialOrders.total),
             "text-emerald-400",
           )}
+        {s.loanPayments.count > 0 &&
+          row(
+            `Abonos de clientes (${s.loanPayments.count} · efectivo ${formatMoney(s.loanPayments.cash)})`,
+            formatMoney(s.loanPayments.total),
+            "text-emerald-400",
+          )}
       </div>
+
+      {s.loanPayments.count > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-slate-400 mb-2">
+            Clientes que pagaron mercancía pendiente
+          </h4>
+          <div className="space-y-2">
+            {s.loanPayments.rows.map((r, i) => (
+              <div key={i} className="border border-slate-800 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <span className="text-white font-medium">{r.customerName}</span>
+                  <span className="text-emerald-400 font-semibold">{formatMoney(r.amount)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-400">
+                  <span>{paymentMethodLabels[r.paymentMethod] ?? r.paymentMethod}</span>
+                  <span>{formatTime(r.createdAt)}</span>
+                  <span className={r.settled ? "text-emerald-400" : "text-yellow-400"}>
+                    {r.settled ? "Quedó al día ✓" : `Queda debiendo ${formatMoney(r.pendingAfter)}`}
+                  </span>
+                </div>
+                {r.products && <p className="text-xs text-slate-500">{r.products}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-slate-800/50 rounded-lg p-4 space-y-1.5">
         <div className="flex justify-between text-sm">
           <span className="text-slate-300">
             Efectivo esperado (base + efectivo recibido
-            {s.specialOrders.cash > 0 ? " + pedidos especiales" : ""})
+            {s.specialOrders.cash > 0 ? " + pedidos especiales" : ""}
+            {s.loanPayments.cash > 0 ? " + abonos" : ""})
           </span>
           <span className="text-white font-semibold">{formatMoney(s.expectedCash)}</span>
         </div>

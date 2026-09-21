@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../../lib/api";
 import type { BranchInfo, Product, Sale } from "../../lib/types";
-import { formatMoney } from "../../lib/format";
+import { formatMoney, bogotaMonthRange, bogotaDayKey, bogotaParts } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 import { SalesList } from "./SalesList";
@@ -19,14 +19,20 @@ const monthLabel = (d: Date) =>
   d.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
 
 const dayLabel = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
+  new Date(iso).toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "America/Bogota",
+  });
 
 // "Ventas realizadas" (admin) de la sede elegida en el selector superior:
 // mes → días con ventas → ventas del día → detalle editable.
 export function SalesHistory({ branch, products, availability, onError, canEdit = false }: SalesHistoryProps) {
+  // El mes visible se ancla al calendario colombiano, no al del dispositivo.
   const [month, setMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    const { year, month: m } = bogotaParts();
+    return new Date(year, m - 1, 1);
   });
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,10 +43,13 @@ export function SalesHistory({ branch, products, availability, onError, canEdit 
     if (!branch) return;
     setLoading(true);
     try {
-      const from = month.toISOString();
-      const to = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+      // Límites del mes en hora de Colombia: con `month.toISOString()` la
+      // medianoche local se convertía a UTC y se perdían (o sobraban) las
+      // ventas de los bordes del mes según la zona del dispositivo.
+      const { from, to } = bogotaMonthRange(month.getFullYear(), month.getMonth() + 1);
       const data = await api.get<Sale[]>(
         `/sales?branchId=${branch.id}&from=${from}&to=${to}&limit=500`,
+        { fresh: true },
       );
       setSales(data);
     } catch {
@@ -57,11 +66,10 @@ export function SalesHistory({ branch, products, availability, onError, canEdit 
 
   if (!branch) return <EmptyState message="Selecciona una sede en el selector superior" />;
 
-  // Agrupar por día (clave YYYY-MM-DD en hora local), de más reciente a más antiguo.
+  // Agrupar por día (clave YYYY-MM-DD en hora de Colombia), de más reciente a más antiguo.
   const byDay = new Map<string, Sale[]>();
   for (const s of sales) {
-    const d = new Date(s.createdAt);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const key = bogotaDayKey(s.createdAt);
     byDay.set(key, [...(byDay.get(key) ?? []), s]);
   }
   const days = [...byDay.keys()].sort((a, b) => b.localeCompare(a));

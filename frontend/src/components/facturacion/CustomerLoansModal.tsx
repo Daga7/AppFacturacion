@@ -3,6 +3,7 @@ import { api } from "../../lib/api";
 import type { Loan, PaymentMethod, Product } from "../../lib/types";
 import { paymentMethodLabels } from "../../lib/types";
 import { formatMoney, formatDateTime, invoiceCode } from "../../lib/format";
+import { downloadCustomerDebtPdf } from "../../lib/customerDebtPdf";
 import { Modal } from "../ui/Modal";
 import { inputCls, primaryBtnCls, secondaryBtnCls } from "../ui/inputs";
 import { ProductLinesEditor } from "./ProductLinesEditor";
@@ -35,8 +36,26 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const sortedLoans = [...debt.loans].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  const customerName = `${debt.customer.firstName} ${debt.customer.lastName ?? ""}`.trim();
+
+  // Descarga el estado de cuenta en PDF para enviárselo al cliente.
+  const downloadDebt = async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      await downloadCustomerDebtPdf(customerName, debt.loans, {
+        phone: debt.customer.phone,
+        branchName: debt.loans[0]?.sale?.branch.name,
+      });
+    } catch {
+      setError("No se pudo generar el PDF");
+    }
+    setDownloading(false);
+  };
 
   const startAction = (loan: Loan, type: "abono" | "cambio") => {
     setAction({ loanId: loan.id, type });
@@ -138,7 +157,7 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
 
   return (
     <Modal
-      title={`${debt.customer.firstName} ${debt.customer.lastName ?? ""}`}
+      title={customerName}
       onClose={onClose}
       maxWidth="max-w-2xl"
     >
@@ -151,6 +170,14 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
           <p className="text-2xl font-bold text-yellow-400">{formatMoney(debt.totalPending)}</p>
         </div>
       </div>
+
+      <button
+        onClick={downloadDebt}
+        disabled={downloading}
+        className={`${secondaryBtnCls} w-full disabled:opacity-50`}
+      >
+        {downloading ? "Generando PDF..." : "⬇ Descargar lista de lo que debe"}
+      </button>
 
       <div className="space-y-3">
         {sortedLoans.map((loan) => {
