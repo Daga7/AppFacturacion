@@ -10,7 +10,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      // La versión nueva no se activa sola: la app muestra "Hay una versión
+      // nueva · Actualizar" (UpdateBanner) y recarga cuando la persona toca
+      // el botón, así nunca se recarga en medio de una venta.
+      registerType: "prompt",
       includeAssets: ["favicon.svg", "icons.svg", "pwa-192x192.png", "pwa-512x512.png", "pwa-maskable-192x192.png", "pwa-maskable-512x512.png"],
       manifest: {
         name: "EL BODEGÓN DE LA TECNOLOGÍA",

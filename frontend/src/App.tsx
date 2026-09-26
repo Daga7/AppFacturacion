@@ -15,6 +15,7 @@ import RevisionOffline from "./pages/RevisionOffline";
 import Devoluciones from "./pages/Devoluciones";
 import Garantias from "./pages/Garantias";
 import Layout from "./components/Layout";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { useAuthStore } from "./stores/auth";
 import { startSyncLoop } from "./lib/offline/sync";
 
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppInit />
+      <UpdateBanner />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
