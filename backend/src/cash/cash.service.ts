@@ -5,6 +5,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
+import {
+  TX_OPTIONS,
+  bogotaDateTime,
+  invoiceCode,
+  type OfflineContext,
+  type Tx,
+} from '../sync/offline';
 
 const SESSION_INCLUDE = {
   branch: true,
@@ -24,11 +31,18 @@ export interface CashSummaryData {
     closedAt: string | null;
   };
   salesCount: number;
+  // "Ventas del día": todo lo recibido en el turno (efectivo + transferencias).
+  // Lo prestado no suma aquí; entra cuando el cliente lo abona.
   totalSales: number;
+  // Lo cobrado en las ventas del turno (incluida la cuota inicial de un
+  // préstamo), sin abonos ni pedidos especiales.
+  salesReceived: number;
+  // Recibido por medio de pago: ventas + abonos + pedidos especiales.
   cashReceived: number;
   nequiReceived: number;
   bancolombiaReceived: number;
   transferReceived: number;
+  // Préstamos hechos en el turno: lo que quedó pendiente de pago (informativo).
   loans: { count: number; total: number };
   discounts: { count: number; total: number };
   // Abonos y pagos de pedidos especiales cobrados durante el turno.
@@ -49,6 +63,16 @@ export interface CashSummaryData {
     bancolombia: number;
     rows: LoanPaymentRow[];
   };
+  // Devoluciones hechas en el turno (de ventas de este u otro día). El
+  // efectivo devuelto se resta del esperado en caja.
+  returns: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+    rows: ReturnRow[];
+  };
   expectedCash: number;
   difference: number | null;
 }
@@ -65,6 +89,18 @@ export interface LoanPaymentRow {
   createdAt: string;
 }
 
+// Una línea del listado de devoluciones del turno.
+export interface ReturnRow {
+  productName: string;
+  quantity: number;
+  amount: number;
+  paymentMethod: string;
+  invoiceNumber: number;
+  reason: string | null;
+  user: string;
+  createdAt: string;
+}
+
 const money = (n: number | string) =>
   `$${Number(n).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
 
@@ -74,6 +110,19 @@ const nowBogota = () =>
     timeStyle: 'short',
     timeZone: 'America/Bogota',
   });
+
+// De dónde salió lo recibido en el turno: "3 venta(s) $X · abonos $Y ·
+// pedidos especiales $Z" (solo las partes que tuvieron movimiento).
+export const receivedBreakdown = (s: CashSummaryData) =>
+  [
+    `${s.salesCount} venta(s) ${money(s.salesReceived)}`,
+    ...(s.loanPayments.count > 0
+      ? [`abonos ${money(s.loanPayments.total)}`]
+      : []),
+    ...(s.specialOrders.count > 0
+      ? [`pedidos especiales ${money(s.specialOrders.total)}`]
+      : []),
+  ].join(' · ');
 
 @Injectable()
 export class CashService {
@@ -92,38 +141,78 @@ export class CashService {
   }
 
   async open(branchId: string, openingAmount: number, userId: string) {
-    const branch = await this.prisma.branch.findUnique({
+    const { session } = await this.prisma.$transaction(
+      (tx) => this.openInTx(tx, branchId, openingAmount, userId),
+      TX_OPTIONS,
+    );
+    this.notifyOpened(session);
+    return JSON.parse(JSON.stringify(session)) as typeof session;
+  }
+
+  // Con `offline` la caja se abrió sin internet: si mientras tanto otra
+  // persona ya abrió una, se sigue usando esa y queda la novedad para el
+  // administrador (dos bases distintas para el mismo turno).
+  async openInTx(
+    tx: Tx,
+    branchId: string,
+    openingAmount: number,
+    userId: string,
+    offline?: OfflineContext,
+  ) {
+    const branch = await tx.branch.findUnique({
       where: { id: branchId },
     });
     if (!branch) throw new NotFoundException('Sucursal no encontrada');
 
-    const existing = await this.prisma.cashSession.findFirst({
+    const existing = await tx.cashSession.findFirst({
       where: { branchId, status: 'OPEN' },
-    });
-    if (existing) {
-      throw new BadRequestException(
-        `Ya hay una caja abierta en ${branch.name}; ciérrala antes de abrir otra`,
-      );
-    }
-
-    const session = await this.prisma.cashSession.create({
-      data: { branchId, openingAmount, openedById: userId },
       include: SESSION_INCLUDE,
     });
+    if (existing) {
+      if (!offline) {
+        throw new BadRequestException(
+          `Ya hay una caja abierta en ${branch.name}; ciérrala antes de abrir otra`,
+        );
+      }
+      offline.issues.push({
+        type: 'CASH_ALREADY_OPEN',
+        message: `Se abrió caja sin internet con base ${money(openingAmount)}, pero en ${branch.name} ya había una caja abierta desde ${bogotaDateTime(existing.openedAt)} por ${existing.openedBy.username} con base ${money(Number(existing.openingAmount))}. Se siguió usando esa caja; revisa la base.`,
+      });
+      return { session: existing, created: false };
+    }
 
-    // Aviso por Telegram a los chats autorizados (best-effort, no bloquea).
+    const session = await tx.cashSession.create({
+      data: {
+        branchId,
+        openingAmount,
+        openedById: userId,
+        openedAt: offline?.occurredAt,
+      },
+      include: SESSION_INCLUDE,
+    });
+    return { session, created: true };
+  }
+
+  // Aviso por Telegram a los chats autorizados (best-effort, no bloquea).
+  notifyOpened(
+    session: {
+      openingAmount: unknown;
+      openedAt: Date;
+      branch: { name: string };
+      openedBy: { username: string };
+    },
+    offline = false,
+  ) {
     void this.telegram.notifyStaff(
-      branch.name,
+      session.branch.name,
       [
-        '🔓 APERTURA DE CAJA',
-        `Sede: ${branch.name}`,
+        offline ? '🔓 APERTURA DE CAJA (sin internet)' : '🔓 APERTURA DE CAJA',
+        `Sede: ${session.branch.name}`,
         `Abierta por: ${session.openedBy.username}`,
-        `Base inicial: ${money(openingAmount)}`,
-        `Fecha y hora: ${nowBogota()}`,
+        `Base inicial: ${money(Number(session.openingAmount))}`,
+        `Fecha y hora: ${bogotaDateTime(session.openedAt)}`,
       ].join('\n'),
     );
-
-    return JSON.parse(JSON.stringify(session)) as typeof session;
   }
 
   async close(branchId: string, closingAmount: number) {
@@ -160,17 +249,14 @@ export class CashService {
         `Turno abierto por: ${summary.session.openedBy?.username ?? '—'}`,
         '—————————————',
         `Base inicial: ${money(summary.session.openingAmount)}`,
-        `Ventas del día: ${summary.salesCount} por ${money(summary.totalSales)}`,
         `Efectivo recibido: ${money(summary.cashReceived)}`,
         `Transferencias: ${money(summary.transferReceived)} (Nequi ${money(summary.nequiReceived)} · Bancolombia ${money(summary.bancolombiaReceived)})`,
-        `Préstamos: ${summary.loans.count} por ${money(summary.loans.total)}`,
+        `Ventas del día: ${money(summary.totalSales)} (efectivo + transferencias)`,
+        `  ${receivedBreakdown(summary)}`,
+        `Préstamos realizados: ${summary.loans.count} por ${money(summary.loans.total)} (no se suman a las ventas)`,
         `Descuentos: ${summary.discounts.count} por ${money(summary.discounts.total)}`,
-        ...(summary.specialOrders.count > 0
-          ? [
-              `Pedidos especiales: ${summary.specialOrders.count} pago(s) por ${money(summary.specialOrders.total)} (efectivo ${money(summary.specialOrders.cash)})`,
-            ]
-          : []),
         ...this.loanPaymentsLines(summary),
+        ...this.returnsLines(summary),
         '—————————————',
         `Efectivo esperado: ${money(summary.expectedCash)}`,
         `Efectivo contado: ${money(summary.session.closingAmount ?? 0)}`,
@@ -209,8 +295,23 @@ export class CashService {
     ];
   }
 
-  // Resumen del turno: base, efectivo contado, ventas, medios de pago,
-  // préstamos, descuentos y efectivo esperado vs recibido.
+  // Bloque del informe de Telegram con las devoluciones del turno.
+  private returnsLines(summary: CashSummaryData): string[] {
+    const r = summary.returns;
+    if (r.count === 0) return [];
+    return [
+      '—————————————',
+      `↩️ DEVOLUCIONES: ${r.count} por ${money(r.total)} (efectivo ${money(r.cash)})`,
+      ...r.rows.map(
+        (row) =>
+          `• ${row.quantity} × ${row.productName} (${invoiceCode(row.invoiceNumber)}): ${money(row.amount)}${row.reason ? ` — ${row.reason}` : ''}`,
+      ),
+    ];
+  }
+
+  // Resumen del turno: base, lo recibido por medio de pago (que suma las
+  // ventas del día), préstamos, descuentos, devoluciones y efectivo esperado
+  // vs contado.
   async summary(sessionId: string) {
     const session = await this.prisma.cashSession.findUnique({
       where: { id: sessionId },
@@ -236,29 +337,35 @@ export class CashService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        saleReturns: {
+          include: {
+            product: true,
+            sale: { select: { invoiceNumber: true } },
+            user: { select: { username: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
     if (!session) throw new NotFoundException('Sesión de caja no encontrada');
 
     const round = (n: number) => Math.round(n * 100) / 100;
 
-    let totalSales = 0;
-    let cashReceived = 0;
-    let nequiReceived = 0;
-    let bancolombiaReceived = 0;
+    // Cobrado en las ventas del turno (contado y cuota inicial de préstamos).
+    let salesCash = 0;
+    let salesNequi = 0;
+    let salesBancolombia = 0;
     let loansCount = 0;
     let loansTotal = 0;
     let discountsCount = 0;
     let discountsTotal = 0;
 
     for (const sale of session.sales) {
-      totalSales += Number(sale.total);
-
       for (const p of sale.payments) {
         const amount = Number(p.amount);
-        if (p.paymentMethod === 'CASH') cashReceived += amount;
-        else if (p.paymentMethod === 'NEQUI') nequiReceived += amount;
-        else bancolombiaReceived += amount;
+        if (p.paymentMethod === 'CASH') salesCash += amount;
+        else if (p.paymentMethod === 'NEQUI') salesNequi += amount;
+        else salesBancolombia += amount;
       }
 
       if (sale.isCredit && sale.loan) {
@@ -275,8 +382,7 @@ export class CashService {
       }
     }
 
-    // Pagos de pedidos especiales cobrados en este turno. El efectivo suma al
-    // esperado; Nequi/Bancolombia se reportan aparte (no afectan el conteo).
+    // Pagos de pedidos especiales cobrados en este turno (entran en lo recibido).
     let soCash = 0;
     let soNequi = 0;
     let soBancolombia = 0;
@@ -289,7 +395,7 @@ export class CashService {
     const soTotal = soCash + soNequi + soBancolombia;
 
     // Abonos a préstamos cobrados en este turno: los clientes que pagaron
-    // mercancía pendiente. El efectivo suma al esperado en caja.
+    // mercancía pendiente (entran en lo recibido).
     let lpCash = 0;
     let lpNequi = 0;
     let lpBancolombia = 0;
@@ -317,10 +423,40 @@ export class CashService {
     }
     const lpTotal = lpCash + lpNequi + lpBancolombia;
 
+    // Devoluciones pagadas en este turno: el efectivo devuelto salió de la caja.
+    let retCash = 0;
+    let retNequi = 0;
+    let retBancolombia = 0;
+    const returnRows: ReturnRow[] = [];
+    for (const r of session.saleReturns) {
+      const amount = Number(r.refundAmount);
+      if (r.paymentMethod === 'CASH') retCash += amount;
+      else if (r.paymentMethod === 'NEQUI') retNequi += amount;
+      else retBancolombia += amount;
+      returnRows.push({
+        productName: r.product.name,
+        quantity: r.quantity,
+        amount: round(amount),
+        paymentMethod: r.paymentMethod,
+        invoiceNumber: r.sale.invoiceNumber,
+        reason: r.reason,
+        user: r.user.username,
+        createdAt: r.createdAt.toISOString(),
+      });
+    }
+    const retTotal = retCash + retNequi + retBancolombia;
+
     const openingAmount = Number(session.openingAmount);
     const closingAmount =
       session.closingAmount !== null ? Number(session.closingAmount) : null;
-    const expectedCash = openingAmount + cashReceived + soCash + lpCash;
+    // Todo lo que entró en el turno por cada medio de pago. "Ventas del día"
+    // es su suma: un préstamo solo cuenta por lo que el cliente ya pagó.
+    const cashReceived = salesCash + lpCash + soCash;
+    const nequiReceived = salesNequi + lpNequi + soNequi;
+    const bancolombiaReceived =
+      salesBancolombia + lpBancolombia + soBancolombia;
+    const transferReceived = nequiReceived + bancolombiaReceived;
+    const expectedCash = openingAmount + cashReceived - retCash;
 
     const sessionData = {
       id: session.id,
@@ -337,11 +473,12 @@ export class CashService {
       JSON.stringify({
         session: sessionData,
         salesCount: session.sales.length,
-        totalSales: round(totalSales),
+        totalSales: round(cashReceived + transferReceived),
+        salesReceived: round(salesCash + salesNequi + salesBancolombia),
         cashReceived: round(cashReceived),
         nequiReceived: round(nequiReceived),
         bancolombiaReceived: round(bancolombiaReceived),
-        transferReceived: round(nequiReceived + bancolombiaReceived),
+        transferReceived: round(transferReceived),
         loans: { count: loansCount, total: round(loansTotal) },
         discounts: { count: discountsCount, total: round(discountsTotal) },
         specialOrders: {
@@ -358,6 +495,14 @@ export class CashService {
           nequi: round(lpNequi),
           bancolombia: round(lpBancolombia),
           rows: loanPaymentRows,
+        },
+        returns: {
+          count: session.saleReturns.length,
+          total: round(retTotal),
+          cash: round(retCash),
+          nequi: round(retNequi),
+          bancolombia: round(retBancolombia),
+          rows: returnRows,
         },
         expectedCash: round(expectedCash),
         difference:

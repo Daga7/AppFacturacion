@@ -41,7 +41,7 @@ interface Movement {
 
 type Tab = "productos" | "categorias" | "stock" | "movimientos";
 type StockAction = "in" | "out" | "transfer" | null;
-type MovType = "STOCK_IN" | "STOCK_OUT" | "BRANCH_TRANSFER";
+type MovType = "STOCK_IN" | "STOCK_OUT" | "BRANCH_TRANSFER" | "WARRANTY";
 
 type ProductForm = { name: string; barcode: string; purchasePrice: string; salePrice: string; retailPrice: string; wholesalePrice: string; categoryId: string; isActive: boolean };
 type CategoryForm = { name: string };
@@ -73,6 +73,8 @@ const movTypeLabels: Record<MovType, string> = {
   STOCK_IN: "Ingreso",
   STOCK_OUT: "Salida",
   BRANCH_TRANSFER: "Transferencia",
+  // Salidas al proveedor aprobadas en Garantías: solo lectura aquí.
+  WARRANTY: "Garantía",
 };
 
 const formatDate = (iso: string) =>
@@ -465,7 +467,7 @@ export default function Inventario() {
         quantity: Math.abs(m.quantity),
         note: m.note ?? "",
         createdAt: m.createdAt,
-        editable: true,
+        editable: movType !== "WARRANTY",
       }));
     }
     const grouped = new Map<string, Movement[]>();
@@ -1087,7 +1089,7 @@ export default function Inventario() {
               <span className="text-slate-400">Tipo</span>
               <span className={`w-fit text-xs px-2 py-0.5 rounded-full ${
                 selectedMovement.type === "STOCK_IN" ? "bg-emerald-900/30 text-emerald-400"
-                : selectedMovement.type === "STOCK_OUT" ? "bg-red-900/30 text-red-400"
+                : selectedMovement.type === "STOCK_OUT" || selectedMovement.type === "WARRANTY" ? "bg-red-900/30 text-red-400"
                 : "bg-brand/20 text-brand-light"
               }`}>
                 {movTypeLabels[selectedMovement.type]}
@@ -1140,9 +1142,11 @@ export default function Inventario() {
               </div>
             ) : (
               <p className="pt-2 border-t border-slate-800 text-xs text-slate-500">
-                {readOnly
-                  ? "Modo consulta: tu rol no permite editar movimientos."
-                  : "Este movimiento no se puede editar (transferencia antigua sin vínculo entre sus dos lados)."}
+                {selectedMovement.type === "WARRANTY"
+                  ? `Salida al proveedor aprobada en Garantías; no se edita desde aquí. ${selectedMovement.note}`
+                  : readOnly
+                    ? "Modo consulta: tu rol no permite editar movimientos."
+                    : "Este movimiento no se puede editar (transferencia antigua sin vínculo entre sus dos lados)."}
               </p>
             )}
           </div>

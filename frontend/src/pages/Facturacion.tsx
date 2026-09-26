@@ -1,12 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, OfflineError } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
 import { useBranchStore } from "../stores/branch";
 import { BranchSelector } from "../components/BranchSelector";
 import { Card } from "../components/ui/Card";
-import type { BranchInfo, Customer, Loan, Product, Sale } from "../lib/types";
-import { invoiceCode, todayStartISO, todayEndISO } from "../lib/format";
+import type { BranchInfo, CashSession, Customer, Loan, Product, Sale } from "../lib/types";
+import { invoiceCode } from "../lib/format";
+import { offlineUrls } from "../lib/offline/cashierData";
+import { useOfflineQueue } from "../lib/offline/queue";
+import {
+  overlayCashSession,
+  overlayLoans,
+  overlayProducts,
+  overlaySales,
+} from "../lib/offline/overlay";
 import { TabPills } from "../components/ui/TabPills";
 import { Alert } from "../components/ui/Alert";
 import { ghostBtnCls } from "../components/ui/inputs";
@@ -26,6 +34,12 @@ import { SalesHistory } from "../components/facturacion/SalesHistory";
 
 type Tab = "facturacion" | "prestamos" | "pendientes" | "ventas";
 
+const QUEUED_MESSAGE = "sin conexión: se enviará sola cuando vuelva el internet";
+
+// Sin internet y sin copia guardada de esos datos en este equipo.
+const loadError = (err: unknown, fallback: string) =>
+  err instanceof OfflineError ? `${fallback}: sin conexión y sin datos guardados en este equipo` : fallback;
+
 export default function Facturacion() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "ADMIN";
@@ -43,12 +57,30 @@ export default function Facturacion() {
     : selectedBranchId ?? user?.branchId ?? "";
 
   const [tab, setTab] = useState<Tab>(isSupervisor ? "ventas" : "facturacion");
-  const [products, setProducts] = useState<Product[]>([]);
+  // Datos tal como llegan del servidor (o de la copia guardada sin internet).
+  const [serverProducts, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [todaySales, setTodaySales] = useState<Sale[]>([]);
+  const [serverLoans, setLoans] = useState<Loan[]>([]);
+  const [serverTodaySales, setTodaySales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Lo registrado sin internet que aún no se envía se muestra encima de esos
+  // datos; al enviarse, `version` cambia y todo se recarga del servidor.
+  const operations = useOfflineQueue((s) => s.operations);
+  const version = useOfflineQueue((s) => s.version);
+  const products = useMemo(
+    () => overlayProducts(serverProducts, operations, branchId),
+    [serverProducts, operations, branchId],
+  );
+  const loans = useMemo(
+    () => overlayLoans(serverLoans, operations, branchId),
+    [serverLoans, operations, branchId],
+  );
+  const todaySales = useMemo(
+    () => overlaySales(serverTodaySales, operations, branchId),
+    [serverTodaySales, operations, branchId],
+  );
 
   // null = ningún formulario abierto; si no, la modalidad de venta en curso.
   const [saleMode, setSaleMode] = useState<SaleMode | null>(null);
@@ -62,72 +94,77 @@ export default function Facturacion() {
 
   // Estado de la caja del cajero: sin caja abierta no puede vender ni prestar.
   const navigate = useNavigate();
-  const [cashOpen, setCashOpen] = useState<boolean | null>(null);
+  // undefined = aún cargando; null = no hay caja abierta en el servidor.
+  const [cashSession, setCashSession] = useState<CashSession | null | undefined>(undefined);
+  const cashOpen =
+    cashSession === undefined ? null : overlayCashSession(cashSession, operations, branchId) !== null;
 
+  // Las consultas con `offline: true` guardan copia para trabajar sin
+  // internet y, sin conexión, devuelven la última guardada.
   const loadCashState = useCallback(async () => {
     if (!isCashier) return;
     try {
-      const session = await api.get<{ id: string } | null>("/cash/current");
-      setCashOpen(session !== null);
-    } catch { setCashOpen(false); }
+      setCashSession(await api.get<CashSession | null>(offlineUrls.cash, { offline: true }));
+    } catch { setCashSession(null); }
   }, [isCashier]);
 
   const loadProducts = useCallback(async () => {
     try {
-      setProducts(await api.get<Product[]>("/products"));
-    } catch { setError("Error al cargar productos"); }
+      setProducts(await api.get<Product[]>(offlineUrls.products, { offline: true }));
+    } catch (err) { setError(loadError(err, "Error al cargar productos")); }
   }, []);
 
   const loadBranches = useCallback(async () => {
+    // El cajero no usa el selector de sede.
+    if (isCashier) return;
     try {
-      setBranches(await api.get<BranchInfo[]>("/branches"));
+      setBranches(await api.get<BranchInfo[]>(offlineUrls.branches));
     } catch { setError("Error al cargar sucursales"); }
-  }, []);
+  }, [isCashier]);
 
   const loadCustomers = useCallback(async () => {
     if (!branchId) return;
     try {
-      setCustomers(await api.get<Customer[]>(`/customers?branchId=${branchId}`));
-    } catch { setError("Error al cargar clientes"); }
+      setCustomers(await api.get<Customer[]>(offlineUrls.customers(branchId), { offline: true }));
+    } catch (err) { setError(loadError(err, "Error al cargar clientes")); }
   }, [branchId]);
 
   const loadLoans = useCallback(async () => {
     if (!branchId) return;
     try {
-      setLoans(await api.get<Loan[]>(`/loans?branchId=${branchId}`));
-    } catch { setError("Error al cargar préstamos"); }
+      setLoans(await api.get<Loan[]>(offlineUrls.loans(branchId), { offline: true }));
+    } catch (err) { setError(loadError(err, "Error al cargar préstamos")); }
   }, [branchId]);
 
   // "Ventas de hoy" = el día calendario en Colombia, acotado por ambos
   // extremos, para que se vea igual desde cualquier dispositivo. Se pide sin
-  // caché porque el service worker guarda las respuestas de la API y podría
-  // devolver una lista vieja tras vender desde otro aparato.
+  // caché del navegador para ver al instante lo vendido desde otro aparato.
   const loadTodaySales = useCallback(async () => {
     if (!branchId) return;
     setLoading(true);
     try {
       setTodaySales(
-        await api.get<Sale[]>(
-          `/sales?branchId=${branchId}&from=${todayStartISO()}&to=${todayEndISO()}&limit=200`,
-          { fresh: true },
-        ),
+        await api.get<Sale[]>(offlineUrls.todaySales(branchId), { fresh: true, offline: true }),
       );
-    } catch { setError("Error al cargar las ventas de hoy"); }
+    } catch (err) { setError(loadError(err, "Error al cargar las ventas de hoy")); }
     setLoading(false);
   }, [branchId]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    loadProducts();
     loadBranches();
+  }, [loadBranches]);
+
+  useEffect(() => {
+    loadProducts();
     loadCashState();
-  }, [loadProducts, loadBranches, loadCashState]);
+  }, [loadProducts, loadCashState, version]);
 
   useEffect(() => {
     if (tab === "facturacion") loadTodaySales();
     else if (tab === "prestamos") { loadCustomers(); loadLoans(); }
     else if (tab === "pendientes") loadLoans();
-  }, [tab, loadTodaySales, loadCustomers, loadLoans]);
+  }, [tab, loadTodaySales, loadCustomers, loadLoans, version]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Stock disponible de un producto en una sede, según los inventarios que
@@ -215,10 +252,13 @@ export default function Facturacion() {
               branchId={branchId}
               products={products}
               availability={(productId) => stockOf(branchId, productId)}
-              onSaved={(sale) => {
+              onSaved={(invoiceNumber) => {
                 setSaleMode(null);
-                setSuccess(`Venta ${invoiceCode(sale.invoiceNumber)} registrada`);
-                refreshAfterSale();
+                setSuccess(
+                  invoiceNumber === null
+                    ? `Venta guardada ${QUEUED_MESSAGE}`
+                    : `Venta ${invoiceCode(invoiceNumber)} registrada`,
+                );
               }}
               onCancel={() => setSaleMode(null)}
             />
@@ -247,10 +287,12 @@ export default function Facturacion() {
               products={products}
               customers={customers}
               availability={(productId) => stockOf(branchId, productId)}
-              onSaved={(sale) => {
-                setSuccess(`Préstamo generado (factura ${invoiceCode(sale.invoiceNumber)})`);
-                loadProducts();
-                loadLoans();
+              onSaved={(invoiceNumber) => {
+                setSuccess(
+                  invoiceNumber === null
+                    ? `Préstamo guardado ${QUEUED_MESSAGE}`
+                    : `Préstamo generado (factura ${invoiceCode(invoiceNumber)})`,
+                );
               }}
             />
             <CustomerForm
@@ -311,10 +353,10 @@ export default function Facturacion() {
         <LoanDetailModal
           loan={selectedLoan}
           onClose={() => setSelectedLoan(null)}
-          onChanged={() => {
-            setSuccess("Abono registrado");
-            loadLoans();
-          }}
+          // En cola ya se ve encima de los datos; enviado, `version` recarga.
+          onChanged={(queued) =>
+            setSuccess(queued ? `Abono guardado ${QUEUED_MESSAGE}` : "Abono registrado")
+          }
         />
       )}
 
@@ -343,8 +385,9 @@ export default function Facturacion() {
           stockOf={stockOf}
           readOnly={isSupervisor}
           onClose={() => setSelectedDebt(null)}
-          onChanged={() => {
-            setSuccess("Préstamo actualizado");
+          onChanged={(queued) => {
+            setSuccess(queued ? `Guardado ${QUEUED_MESSAGE}` : "Préstamo actualizado");
+            // El cambio de mercancía no pasa por la cola: recargar siempre.
             loadLoans();
             loadProducts();
           }}

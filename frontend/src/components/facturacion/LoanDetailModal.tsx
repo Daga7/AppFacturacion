@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { api } from "../../lib/api";
 import type { Loan, PaymentMethod } from "../../lib/types";
 import { paymentMethodLabels } from "../../lib/types";
-import { formatMoney, formatDateTime, invoiceCode } from "../../lib/format";
+import { formatMoney, formatDateTime, saleCode } from "../../lib/format";
+import { loanPaymentOperation, submitOperation } from "../../lib/offline/operations";
 import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
 import { inputCls, primaryBtnCls } from "../ui/inputs";
@@ -10,7 +10,8 @@ import { inputCls, primaryBtnCls } from "../ui/inputs";
 interface LoanDetailModalProps {
   loan: Loan;
   onClose: () => void;
-  onChanged: () => void;
+  // queued = quedó guardado sin conexión.
+  onChanged: (queued: boolean) => void;
 }
 
 // Detalle de un préstamo con historial de abonos y formulario para abonar.
@@ -29,8 +30,8 @@ export function LoanDetailModal({ loan, onClose, onChanged }: LoanDetailModalPro
     setSaving(true);
     setError(null);
     try {
-      await api.post(`/loans/${loan.id}/payments`, { amount: value, paymentMethod: method });
-      onChanged();
+      const outcome = await submitOperation(loanPaymentOperation(loan, value, method));
+      onChanged(outcome.queued);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrar el abono");
@@ -45,7 +46,7 @@ export function LoanDetailModal({ loan, onClose, onChanged }: LoanDetailModalPro
       maxWidth="max-w-xl"
     >
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
-        {loan.sale && <span>{invoiceCode(loan.sale.invoiceNumber)} · {loan.sale.branch.name}</span>}
+        {loan.sale && <span>{saleCode(loan.sale)} · {loan.sale.branch.name}</span>}
         <span>· {formatDateTime(loan.createdAt)}</span>
         <StatusBadge tone={loan.loanStatus === "PAID" ? "success" : "warning"}>
           {loan.loanStatus === "PAID" ? "Pagado" : "Activo"}
@@ -85,6 +86,7 @@ export function LoanDetailModal({ loan, onClose, onChanged }: LoanDetailModalPro
               <div key={p.id} className="flex justify-between">
                 <span className="text-slate-300">
                   {formatDateTime(p.createdAt)} · {paymentMethodLabels[p.paymentMethod]}
+                  {p.pending && " · sin enviar"}
                 </span>
                 <span className="text-emerald-400 font-medium">{formatMoney(p.amount)}</span>
               </div>

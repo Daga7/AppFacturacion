@@ -1,6 +1,6 @@
 import type { Loan } from "./types";
 import { APP_NAME } from "./constants";
-import { formatMoney, formatDate, invoiceCode } from "./format";
+import { formatMoney, formatDate, saleCode } from "./format";
 
 // Estado de cuenta de un cliente para enviárselo por WhatsApp/Telegram: qué
 // mercancía tiene pendiente, cuánto ha abonado y cuánto debe. jsPDF y autotable
@@ -49,7 +49,7 @@ export async function downloadCustomerDebtPdf(
     totalPending += Number(loan.pendingAmount);
     totalAbonado += abonado;
 
-    const factura = loan.sale ? invoiceCode(loan.sale.invoiceNumber) : "—";
+    const factura = loan.sale ? saleCode(loan.sale) : "—";
     const details = loan.sale?.details ?? [];
 
     if (details.length === 0) {

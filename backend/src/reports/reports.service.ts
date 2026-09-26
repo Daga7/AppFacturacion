@@ -2,6 +2,46 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
+// Los informes muestran lo vendido neto de devoluciones (módulo de
+// devoluciones del cajero): a cada venta se le resta lo devuelto, sin
+// importar el día en que se hizo la devolución. Una venta devuelta por
+// completo deja de contar como venta.
+const RETURNS_SELECT = {
+  select: { quantity: true, refundAmount: true },
+} as const;
+
+type ReturnLike = { quantity: number; refundAmount: Prisma.Decimal };
+
+const refunded = (returns: ReturnLike[]) =>
+  returns.reduce((sum, r) => sum + Number(r.refundAmount), 0);
+
+const returnedUnits = (returns: ReturnLike[]) =>
+  returns.reduce((sum, r) => sum + r.quantity, 0);
+
+// Pagos de una venta netos de lo devuelto: la devolución se descuenta de los
+// medios con que se pagó la venta, en proporción a lo pagado con cada uno
+// (así el panel de métodos de pago nunca queda en negativo).
+const netPayments = (sale: {
+  payments: { paymentMethod: string; amount: Prisma.Decimal }[];
+  returns: ReturnLike[];
+}) => {
+  const paid = sale.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const refund = refunded(sale.returns);
+  return sale.payments.map((p) => ({
+    method: p.paymentMethod,
+    amount:
+      Number(p.amount) - (paid > 0 ? (refund * Number(p.amount)) / paid : 0),
+  }));
+};
+
+const fullyReturned = (sale: {
+  details: { quantity: number }[];
+  returns: ReturnLike[];
+}) =>
+  sale.returns.length > 0 &&
+  returnedUnits(sale.returns) >=
+    sale.details.reduce((sum, d) => sum + d.quantity, 0);
+
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
@@ -18,21 +58,30 @@ export class ReportsService {
 
     const sales = await this.prisma.sale.findMany({
       where,
-      include: { branch: true },
+      include: {
+        details: { select: { quantity: true } },
+        returns: RETURNS_SELECT,
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    const totalSales = sales.length;
-    const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total), 0);
-    const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
-
+    let totalSales = 0;
+    let totalRevenue = 0;
+    let totalRefunded = 0;
     const byDay: Record<string, { count: number; total: number }> = {};
     for (const s of sales) {
+      const refund = refunded(s.returns);
+      const counts = !fullyReturned(s);
+      totalRefunded += refund;
+      totalRevenue += Number(s.total) - refund;
+      if (counts) totalSales++;
+
       const day = s.createdAt.toISOString().slice(0, 10);
       if (!byDay[day]) byDay[day] = { count: 0, total: 0 };
-      byDay[day].count++;
-      byDay[day].total += Number(s.total);
+      if (counts) byDay[day].count++;
+      byDay[day].total += Number(s.total) - refund;
     }
+    const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     return {
       period: { since: since.toISOString(), days },
@@ -40,6 +89,8 @@ export class ReportsService {
         totalSales,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         avgTicket: Math.round(avgTicket * 100) / 100,
+        // Lo devuelto a los clientes de estas ventas (ya descontado arriba).
+        refunded: Math.round(totalRefunded * 100) / 100,
       },
       byDay,
     };
@@ -58,7 +109,7 @@ export class ReportsService {
 
     const details = await this.prisma.saleDetail.findMany({
       where,
-      include: { product: true },
+      include: { product: true, returns: RETURNS_SELECT },
     });
 
     const productSales: Record<
@@ -66,12 +117,14 @@ export class ReportsService {
       { name: string; quantity: number; total: number }
     > = {};
     for (const d of details) {
+      const quantity = d.quantity - returnedUnits(d.returns);
+      if (quantity <= 0) continue;
       const key = d.productId;
       if (!productSales[key]) {
         productSales[key] = { name: d.product.name, quantity: 0, total: 0 };
       }
-      productSales[key].quantity += d.quantity;
-      productSales[key].total += Number(d.subtotal);
+      productSales[key].quantity += quantity;
+      productSales[key].total += Number(d.subtotal) - refunded(d.returns);
     }
 
     const top = Object.entries(productSales)
@@ -122,39 +175,49 @@ export class ReportsService {
     const sales = await this.prisma.sale.findMany({
       where: { status: 'COMPLETED', createdAt: { gte: since } },
       include: {
-        details: { include: { product: true } },
+        details: { include: { product: true, returns: RETURNS_SELECT } },
         payments: true,
         branch: true,
+        returns: RETURNS_SELECT,
       },
     });
 
-    const totalTickets = sales.length;
+    let totalTickets = 0;
     let totalRevenue = 0;
+    let totalRefunded = 0;
     let totalProfit = 0;
     const byMethod: Record<string, { count: number; total: number }> = {};
     const byBranch: Record<string, { tickets: number; revenue: number }> = {};
 
     for (const s of sales) {
-      totalRevenue += Number(s.total);
+      const refund = refunded(s.returns);
+      const counts = !fullyReturned(s);
+      const revenue = Number(s.total) - refund;
+      totalRefunded += refund;
+      totalRevenue += revenue;
+      if (counts) totalTickets++;
 
+      // Ganancia neta por línea: lo cobrado menos lo devuelto, contra el
+      // costo solo de las unidades que se quedó el cliente.
       for (const d of s.details) {
         totalProfit +=
-          Number(d.subtotal) - Number(d.product.purchasePrice) * d.quantity;
+          Number(d.subtotal) -
+          refunded(d.returns) -
+          Number(d.product.purchasePrice) *
+            (d.quantity - returnedUnits(d.returns));
       }
 
-      for (const p of s.payments) {
-        if (!byMethod[p.paymentMethod]) {
-          byMethod[p.paymentMethod] = { count: 0, total: 0 };
-        }
-        byMethod[p.paymentMethod].count++;
-        byMethod[p.paymentMethod].total += Number(p.amount);
+      for (const p of netPayments(s)) {
+        if (!byMethod[p.method]) byMethod[p.method] = { count: 0, total: 0 };
+        byMethod[p.method].count++;
+        byMethod[p.method].total += p.amount;
       }
 
       const branchName = s.branch.name;
       if (!byBranch[branchName])
         byBranch[branchName] = { tickets: 0, revenue: 0 };
-      byBranch[branchName].tickets++;
-      byBranch[branchName].revenue += Number(s.total);
+      if (counts) byBranch[branchName].tickets++;
+      byBranch[branchName].revenue += revenue;
     }
 
     // Ganancia de pedidos especiales: solo los ya entregados (PICKED_UP) y con
@@ -188,6 +251,7 @@ export class ReportsService {
         totalRevenue: round(totalRevenue),
         totalTickets,
         totalProfit: round(totalProfit),
+        refunded: round(totalRefunded),
       },
       specialOrders: {
         count: specialOrdersCount,
@@ -217,7 +281,8 @@ export class ReportsService {
   }
 
   // Solo el total de ganancias, agregado en SQL: no carga las ventas, así la
-  // tarjeta responde rápido aunque haya miles de registros.
+  // tarjeta responde rápido aunque haya miles de registros. A cada línea se
+  // le resta lo devuelto (dinero y unidades).
   async profitTotal(branchId?: string, days = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -225,11 +290,18 @@ export class ReportsService {
     const [row] = await this.prisma.$queryRaw<
       { revenue: number; cost: number }[]
     >`
-      SELECT COALESCE(SUM(sd."subtotal"), 0)::float AS revenue,
-             COALESCE(SUM(p."purchasePrice" * sd."quantity"), 0)::float AS cost
+      SELECT COALESCE(SUM(sd."subtotal" - COALESCE(r."refunded", 0)), 0)::float AS revenue,
+             COALESCE(SUM(p."purchasePrice" * (sd."quantity" - COALESCE(r."units", 0))), 0)::float AS cost
       FROM "SaleDetail" sd
       JOIN "Product" p ON p."id" = sd."productId"
       JOIN "Sale" s ON s."id" = sd."saleId"
+      LEFT JOIN (
+        SELECT "saleDetailId",
+               SUM("quantity") AS "units",
+               SUM("refundAmount") AS "refunded"
+        FROM "SaleReturn"
+        GROUP BY "saleDetailId"
+      ) r ON r."saleDetailId" = sd."id"
       WHERE s."status" = 'COMPLETED'
         AND s."createdAt" >= ${since}
         ${branchId ? Prisma.sql`AND s."branchId" = ${branchId}` : Prisma.empty}
@@ -244,8 +316,9 @@ export class ReportsService {
     };
   }
 
-  // Ganancia por venta: al total cobrado se le resta el costo de compra de
-  // cada producto vendido; la suma de todas da la ganancia general.
+  // Ganancia por venta: al total cobrado (menos lo devuelto) se le resta el
+  // costo de compra de lo que se quedó el cliente; la suma de todas da la
+  // ganancia general. Las ventas devueltas por completo no aparecen.
   async profitSummary(branchId?: string, days = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -257,30 +330,39 @@ export class ReportsService {
         ...(branchId ? { branchId } : {}),
       },
       include: {
-        details: { include: { product: true } },
+        details: { include: { product: true, returns: RETURNS_SELECT } },
         branch: true,
+        returns: RETURNS_SELECT,
       },
       orderBy: { createdAt: 'desc' },
     });
 
     const round = (n: number) => Math.round(n * 100) / 100;
 
-    const rows = sales.map((s) => {
-      const cost = s.details.reduce(
-        (sum, d) => sum + Number(d.product.purchasePrice) * d.quantity,
-        0,
-      );
-      const total = Number(s.total);
-      return {
-        saleId: s.id,
-        invoiceNumber: s.invoiceNumber,
-        branch: s.branch.name,
-        createdAt: s.createdAt.toISOString(),
-        total: round(total),
-        cost: round(cost),
-        profit: round(total - cost),
-      };
-    });
+    const rows = sales
+      .filter((s) => !fullyReturned(s))
+      .map((s) => {
+        const cost = s.details.reduce(
+          (sum, d) =>
+            sum +
+            Number(d.product.purchasePrice) *
+              (d.quantity - returnedUnits(d.returns)),
+          0,
+        );
+        const returned = refunded(s.returns);
+        const total = Number(s.total) - returned;
+        return {
+          saleId: s.id,
+          invoiceNumber: s.invoiceNumber,
+          branch: s.branch.name,
+          createdAt: s.createdAt.toISOString(),
+          total: round(total),
+          cost: round(cost),
+          profit: round(total - cost),
+          // Devuelto al cliente (ya descontado de total).
+          returned: round(returned),
+        };
+      });
 
     const totals = rows.reduce(
       (acc, r) => ({
@@ -311,21 +393,24 @@ export class ReportsService {
       createdAt: { gte: since },
     };
     if (branchId) saleWhere.branchId = branchId;
-    const where: Prisma.SalePaymentWhereInput = { sale: saleWhere };
-
-    const payments = await this.prisma.salePayment.findMany({
-      where,
+    const sales = await this.prisma.sale.findMany({
+      where: saleWhere,
+      select: { payments: true, returns: RETURNS_SELECT },
     });
 
     const byMethod: Record<string, { count: number; total: number }> = {};
-    for (const p of payments) {
-      const method = p.paymentMethod;
-      if (!byMethod[method]) byMethod[method] = { count: 0, total: 0 };
-      byMethod[method].count++;
-      byMethod[method].total += Number(p.amount);
+    for (const s of sales) {
+      for (const p of netPayments(s)) {
+        if (!byMethod[p.method]) byMethod[p.method] = { count: 0, total: 0 };
+        byMethod[p.method].count++;
+        byMethod[p.method].total += p.amount;
+      }
     }
 
-    const grandTotal = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const grandTotal = Object.values(byMethod).reduce(
+      (sum, m) => sum + m.total,
+      0,
+    );
     const share = Object.fromEntries(
       Object.entries(byMethod).map(([k, v]) => [
         k,

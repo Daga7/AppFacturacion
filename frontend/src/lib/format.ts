@@ -29,6 +29,10 @@ export const formatDateTime = (iso: string) =>
 // Número de factura al estilo "F0001" (único por sucursal).
 export const invoiceCode = (n: number) => `F${String(n).padStart(4, "0")}`;
 
+// Código de una venta; la hecha sin internet recibe número al enviarse.
+export const saleCode = (sale: { invoiceNumber: number; pending?: boolean }) =>
+  sale.pending ? "Sin enviar" : invoiceCode(sale.invoiceNumber);
+
 // --- Rangos de fecha en hora de Colombia -----------------------------------
 // Los reportes ("ventas de hoy", "ventas del mes") deben ser iguales en todos
 // los dispositivos: lo que cuenta es el día en Bogotá, no la zona horaria que

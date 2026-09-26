@@ -75,6 +75,7 @@ export class CustomersService {
         where: { saleDetailId: { in: detailIds } },
       });
       await tx.salePayment.deleteMany({ where: { saleId: { in: saleIds } } });
+      await tx.saleReturn.deleteMany({ where: { saleId: { in: saleIds } } });
       await tx.saleDetail.deleteMany({ where: { saleId: { in: saleIds } } });
       await tx.sale.deleteMany({ where: { customerId: id } });
       await tx.customer.delete({ where: { id } });

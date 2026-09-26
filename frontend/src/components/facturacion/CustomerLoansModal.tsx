@@ -2,7 +2,13 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import type { Loan, PaymentMethod, Product } from "../../lib/types";
 import { paymentMethodLabels } from "../../lib/types";
-import { formatMoney, formatDateTime, invoiceCode } from "../../lib/format";
+import { formatMoney, formatDateTime, saleCode } from "../../lib/format";
+import { useConnection } from "../../lib/offline/connection";
+import {
+  loanPaymentOperation,
+  returnLoanOperation,
+  submitOperation,
+} from "../../lib/offline/operations";
 import { downloadCustomerDebtPdf } from "../../lib/customerDebtPdf";
 import { Modal } from "../ui/Modal";
 import { inputCls, primaryBtnCls, secondaryBtnCls } from "../ui/inputs";
@@ -15,7 +21,8 @@ interface CustomerLoansModalProps {
   products: Product[];
   stockOf: (branchId: string, productId: string) => number;
   onClose: () => void;
-  onChanged: () => void;
+  // queued = quedó guardado sin conexión.
+  onChanged: (queued: boolean) => void;
   readOnly?: boolean;
 }
 
@@ -37,6 +44,8 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  // El cambio de mercancía necesita internet; abonos y devoluciones no.
+  const online = useConnection((s) => s.online);
 
   const sortedLoans = [...debt.loans].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
@@ -64,8 +73,8 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
     setError(null);
   };
 
-  const finish = () => {
-    onChanged();
+  const finish = (queued: boolean) => {
+    onChanged(queued);
     onClose();
   };
 
@@ -80,8 +89,8 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
     setSaving(true);
     setError(null);
     try {
-      await api.post(`/loans/${loan.id}/payments`, { amount: value, paymentMethod: abonoMethod });
-      finish();
+      const outcome = await submitOperation(loanPaymentOperation(loan, value, abonoMethod));
+      finish(outcome.queued);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrar el abono");
       setSaving(false);
@@ -101,7 +110,7 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
           unitPrice: d.unitPrice,
         })),
       });
-      finish();
+      finish(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cambiar la mercancía");
       setSaving(false);
@@ -116,8 +125,8 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
     setSaving(true);
     setError(null);
     try {
-      await api.delete(`/loans/${loan.id}`);
-      finish();
+      const outcome = await submitOperation(returnLoanOperation(loan));
+      finish(outcome.queued);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrar la devolución");
       setSaving(false);
@@ -134,21 +143,22 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
     setSaving(true);
     setError(null);
     let remaining = value;
+    let queued = false;
     try {
       for (const loan of sortedLoans) {
         if (remaining <= 0.009) break;
         const pay = Math.min(remaining, Number(loan.pendingAmount));
         if (pay < 0.01) continue;
-        await api.post(`/loans/${loan.id}/payments`, {
-          amount: Math.round(pay * 100) / 100,
-          paymentMethod: globalMethod,
-        });
+        const outcome = await submitOperation(
+          loanPaymentOperation(loan, Math.round(pay * 100) / 100, globalMethod),
+        );
+        queued ||= outcome.queued;
         remaining -= pay;
       }
-      finish();
+      finish(queued);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrar el abono");
-      onChanged();
+      onChanged(queued);
       setSaving(false);
     }
   };
@@ -197,7 +207,7 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-slate-400">
                   {formatDateTime(loan.createdAt)}
-                  {loan.sale && ` · ${invoiceCode(loan.sale.invoiceNumber)} · ${loan.sale.branch.name}`}
+                  {loan.sale && ` · ${saleCode(loan.sale)} · ${loan.sale.branch.name}`}
                 </span>
                 <span className="text-yellow-400 font-semibold">
                   Debe {formatMoney(loan.pendingAmount)}
@@ -226,12 +236,15 @@ export function CustomerLoansModal({ debt, products, stockOf, onClose, onChanged
                   >
                     Abonar
                   </button>
-                  <button
-                    onClick={() => (active === "cambio" ? setAction(null) : startAction(loan, "cambio"))}
-                    className={`${actionBtnCls} ${active === "cambio" ? "bg-yellow-600 text-white" : "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50"}`}
-                  >
-                    Cambiar mercancía
-                  </button>
+                  {/* Sin internet (o con el préstamo aún sin enviar) no se cambia mercancía. */}
+                  {online && !loan.pending && (
+                    <button
+                      onClick={() => (active === "cambio" ? setAction(null) : startAction(loan, "cambio"))}
+                      className={`${actionBtnCls} ${active === "cambio" ? "bg-yellow-600 text-white" : "bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50"}`}
+                    >
+                      Cambiar mercancía
+                    </button>
+                  )}
                   <button
                     onClick={() => submitDevolucion(loan)}
                     disabled={saving}

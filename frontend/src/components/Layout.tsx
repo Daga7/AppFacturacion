@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/auth";
+import { useOfflineIssues } from "../stores/offlineIssues";
 import { APP_NAME } from "../lib/constants";
+import { ConnectionBanner } from "./ConnectionBanner";
 
 const baseNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: "◉" },
@@ -16,6 +18,7 @@ const baseNavItems = [
 // para que no se rendericen como emoji a color y desalineen el texto.
 const requestNavItems = [
   { to: "/traslados", label: "Traslados", icon: "⇄" },
+  { to: "/garantias", label: "Garantías", icon: "⊘" },
   { to: "/pedidos-especiales", label: "Pedidos especiales", icon: "◈" },
   { to: "/lista-compras", label: "Lista de compras", icon: "▤" },
   { to: "/solicitudes-precio", label: "Solicitudes de precio", icon: "⊗" },
@@ -24,15 +27,26 @@ const requestNavItems = [
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "ADMIN";
+  const openIssues = useOfflineIssues((s) => s.open);
+  const refreshIssues = useOfflineIssues((s) => s.refresh);
+  const location = useLocation();
+
+  // Avisos de lo registrado sin internet: se consultan al cambiar de página.
+  useEffect(() => {
+    if (isAdmin) void refreshIssues();
+  }, [isAdmin, refreshIssues, location.pathname]);
+
   // El cajero (vendedor) ve su caja y sus módulos propios; el admin ve todo
   // más la gestión de solicitudes y la vinculación con Telegram.
   const navItems =
     user?.role === "CASHIER"
       ? [{ to: "/caja", label: "Caja", icon: "▣" }, ...requestNavItems]
-      : user?.role === "ADMIN"
+      : isAdmin
         ? [
             ...baseNavItems,
             ...requestNavItems,
+            { to: "/revision-offline", label: "Revisión sin conexión", icon: "◬", badge: openIssues },
             { to: "/telegram", label: "Vincular Telegram", icon: "✈" },
           ]
         : baseNavItems;
@@ -76,6 +90,11 @@ export default function Layout() {
           >
             <span className="text-lg">{item.icon}</span>
             {item.label}
+            {"badge" in item && item.badge > 0 && (
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400">
+                {item.badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -142,6 +161,7 @@ export default function Layout() {
         </div>
 
         <div className="flex-1 p-6">
+          <ConnectionBanner />
           <Outlet />
         </div>
       </main>

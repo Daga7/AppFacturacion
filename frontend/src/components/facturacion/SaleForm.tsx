@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { api } from "../../lib/api";
-import type { Product, Sale } from "../../lib/types";
+import type { Product } from "../../lib/types";
+import { saleOperation, submitOperation } from "../../lib/offline/operations";
 import { formatMoney } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { primaryBtnCls, secondaryBtnCls } from "../ui/inputs";
@@ -19,7 +19,8 @@ interface SaleFormProps {
   branchId: string;
   products: Product[];
   availability: (productId: string) => number;
-  onSaved: (sale: Sale) => void;
+  // Número de factura asignado, o null si quedó guardada sin conexión.
+  onSaved: (invoiceNumber: number | null) => void;
   onCancel: () => void;
   mode?: SaleMode;
 }
@@ -55,12 +56,17 @@ export function SaleForm({
     setSaving(true);
     setError(null);
     try {
-      const sale = await api.post<Sale>("/sales", {
-        branchId,
-        details: parsedLines.details,
-        payments: parsedPayments.payments,
-      });
-      onSaved(sale);
+      const outcome = await submitOperation(
+        saleOperation({
+          branchId,
+          customer: null,
+          isCredit: false,
+          details: parsedLines.details,
+          payments: parsedPayments.payments,
+          products,
+        }),
+      );
+      onSaved(outcome.queued ? null : Number(outcome.result.invoiceNumber));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrar la venta");
     }

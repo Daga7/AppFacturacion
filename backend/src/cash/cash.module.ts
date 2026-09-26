@@ -7,5 +7,6 @@ import { TelegramModule } from '../telegram/telegram.module';
   imports: [TelegramModule],
   controllers: [CashController],
   providers: [CashService],
+  exports: [CashService],
 })
 export class CashModule {}

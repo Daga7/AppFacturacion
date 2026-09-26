@@ -57,7 +57,9 @@ export class SalesController {
     return this.salesService.update(id, dto);
   }
 
-  @Roles('ADMIN', 'CASHIER')
+  // Solo el admin: las devoluciones del cajero van por el módulo de
+  // devoluciones (/returns), no cancelando la venta.
+  @Roles('ADMIN')
   @Post(':id/cancel')
   cancel(@Param('id') id: string) {
     return this.salesService.cancel(id);

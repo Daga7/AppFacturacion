@@ -1,5 +1,5 @@
 import type { Loan } from "../../lib/types";
-import { formatMoney, formatDateTime, invoiceCode } from "../../lib/format";
+import { formatMoney, formatDateTime, saleCode } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { StatusBadge } from "../ui/StatusBadge";
 import { EmptyState } from "../ui/EmptyState";
@@ -37,7 +37,7 @@ export function LoansList({ loans, onSelect, emptyMessage = "No hay préstamos r
                 )}
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {l.sale ? `${invoiceCode(l.sale.invoiceNumber)} · ${l.sale.branch.name} · ` : ""}
+                {l.sale ? `${saleCode(l.sale)} · ${l.sale.branch.name} · ` : ""}
                 {formatDateTime(l.createdAt)} · {productCount} producto{productCount === 1 ? "" : "s"}
               </p>
             </div>

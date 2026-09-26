@@ -45,6 +45,8 @@ enum InventoryMovementType {
   BRANCH_TRANSFER
   STOCK_IN
   STOCK_OUT
+  // Salida de mercancía defectuosa hacia el proveedor (garantía aprobada).
+  WARRANTY
 }
 
 enum CashSessionStatus {
@@ -116,6 +118,9 @@ model Branch {
   transfersTo       BranchTransferRequest[] @relation("TransferToBranch")
   specialOrders     SpecialOrder[]
   purchaseListItems PurchaseListItem[]
+  offlineIssues     OfflineIssue[]
+  saleReturns       SaleReturn[]
+  warrantyClaims    WarrantyClaim[]
 }
 
 model User {
@@ -148,6 +153,11 @@ model User {
   purchaseListItems    PurchaseListItem[]
   priceChangeRequests  PriceChangeRequest[]    @relation("PriceRequestedBy")
   priceChangeApprovals PriceChangeRequest[]    @relation("PriceResolvedBy")
+  offlineIssues        OfflineIssue[]          @relation("OfflineIssueUser")
+  offlineIssuesSolved  OfflineIssue[]          @relation("OfflineIssueResolvedBy")
+  saleReturns          SaleReturn[]
+  warrantyRequests     WarrantyClaim[]         @relation("WarrantyRequestedBy")
+  warrantyResolutions  WarrantyClaim[]         @relation("WarrantyResolvedBy")
 }
 
 // Chats de Telegram vinculados a una cuenta (varios por usuario). Se crean
@@ -227,6 +237,8 @@ model Product {
   priceChangeRequests PriceChangeRequest[]
   purchaseListItems   PurchaseListItem[]
   transferRequests    BranchTransferRequest[]
+  saleReturns         SaleReturn[]
+  warrantyClaims      WarrantyClaim[]
 }
 
 model Inventory {
@@ -268,6 +280,7 @@ model CashSession {
   sales                Sale[]
   specialOrderPayments SpecialOrderPayment[]
   loanPayments         LoanPayment[]
+  saleReturns          SaleReturn[]
 
   openedAt DateTime  @default(now())
   closedAt DateTime?
@@ -302,6 +315,7 @@ model Sale {
   customer Customer? @relation(fields: [customerId], references: [id])
 
   details SaleDetail[]
+  returns SaleReturn[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -332,6 +346,7 @@ model SaleDetail {
   updatedAt DateTime @updatedAt
 
   movements InventoryMovement[]
+  returns   SaleReturn[]
 
   @@unique([saleId, productId])
 }
@@ -348,6 +363,42 @@ model SalePayment {
   sale Sale @relation(fields: [saleId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+// Devolución de mercancía vendida de contado (módulo de devoluciones del
+// cajero, solo con internet). Se hace sobre una línea de una venta de los
+// últimos 7 días de la sede, nunca sobre un préstamo (esos se devuelven desde
+// el préstamo). Reingresa el stock y el dinero sale de la caja abierta: queda
+// asociada a ese turno para descontarla en el cierre.
+model SaleReturn {
+  id String @id @default(uuid())
+
+  saleId       String
+  saleDetailId String
+  productId    String
+  quantity     Int
+
+  // Lo que se le devolvió al cliente: lo que pagó por esas unidades
+  // (precio con descuento incluido).
+  refundAmount  Decimal
+  paymentMethod PaymentMethod
+  reason        String?
+
+  branchId      String
+  userId        String
+  cashSessionId String?
+
+  sale        Sale         @relation(fields: [saleId], references: [id])
+  saleDetail  SaleDetail   @relation(fields: [saleDetailId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  cashSession CashSession? @relation(fields: [cashSessionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
+  @@index([cashSessionId])
 }
 
 model Loan {
@@ -571,4 +622,111 @@ model PriceChangeRequest {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+}
+
+// Garantía con el proveedor: mercancía defectuosa de una sede que se le
+// devolverá al proveedor. El vendedor la registra en PENDING sin tocar el
+// inventario; si el administrador la aprueba, sale del stock de la sede
+// (movimiento WARRANTY). Si la rechaza, no se mueve nada.
+model WarrantyClaim {
+  id String @id @default(uuid())
+
+  branchId  String
+  productId String
+  quantity  Int
+
+  // Falla que presenta la mercancía y proveedor al que se le devuelve.
+  reason   String
+  supplier String?
+
+  status RequestStatus @default(PENDING)
+
+  requestedById String
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  branch      Branch  @relation(fields: [branchId], references: [id])
+  product     Product @relation(fields: [productId], references: [id])
+  requestedBy User    @relation("WarrantyRequestedBy", fields: [requestedById], references: [id])
+  resolvedBy  User?   @relation("WarrantyResolvedBy", fields: [resolvedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([branchId, status])
+}
+
+// --- Trabajo sin internet --------------------------------------------------
+// El cajero puede abrir caja, vender, prestar, abonar y registrar devoluciones
+// sin conexión; el dispositivo guarda cada operación y la envía a POST /sync
+// cuando vuelve la red.
+
+enum SyncOperationType {
+  OPEN_CASH
+  CREATE_SALE
+  LOAN_PAYMENT
+  RETURN_LOAN
+}
+
+// Operación ya recibida desde un dispositivo. El id lo genera el dispositivo,
+// así que si el mismo envío llega dos veces (la red se cortó antes de recibir
+// la respuesta) la segunda vez se reconoce y no se duplica.
+model SyncedOperation {
+  id String @id
+
+  type       SyncOperationType
+  userId     String
+  branchId   String
+  // Momento real en que se hizo en el dispositivo.
+  occurredAt DateTime
+
+  // Rechazada por datos inválidos (el motivo queda en error y en un aviso).
+  rejected Boolean @default(false)
+  error    String?
+  // Ids creados (venta, préstamo, sesión...) para responder a reenvíos.
+  result   Json?
+
+  createdAt DateTime @default(now())
+}
+
+// Novedad de algo registrado sin internet que no cuadró al sincronizar.
+// La operación se aplicó igual (ya ocurrió en la vida real); el aviso es para
+// que el administrador lo revise y lo marque como revisado.
+enum OfflineIssueType {
+  NEGATIVE_STOCK
+  OVERPAYMENT
+  LOAN_NOT_FOUND
+  LOAN_ALREADY_CLOSED
+  CASH_ALREADY_OPEN
+  NO_CASH_SESSION
+  REJECTED
+}
+
+model OfflineIssue {
+  id String @id @default(uuid())
+
+  type    OfflineIssueType
+  message String
+
+  operationId String
+  occurredAt  DateTime
+  // Referencias informativas (sin llave foránea: el préstamo puede borrarse
+  // por una devolución y el aviso debe seguir existiendo).
+  saleId      String?
+  loanId      String?
+
+  branchId String
+  userId   String
+
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  branch     Branch @relation(fields: [branchId], references: [id])
+  user       User   @relation("OfflineIssueUser", fields: [userId], references: [id])
+  resolvedBy User?  @relation("OfflineIssueResolvedBy", fields: [resolvedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([resolvedAt])
 }

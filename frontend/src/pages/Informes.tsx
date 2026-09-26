@@ -26,6 +26,10 @@ import { ProfitPanel } from "../components/informes/ProfitPanel";
 const GENERAL = "general";
 const DAYS = 30;
 
+// Nota de las tarjetas de ventas: los montos ya vienen sin lo devuelto.
+const refundHint = (base: string, refunded: number) =>
+  refunded > 0 ? `${base} · ya descuenta ${formatMoney(refunded)} devueltos` : base;
+
 export default function Informes() {
   const user = useAuthStore((s) => s.user);
   const selectedBranchId = useBranchStore((s) => s.branchId);
@@ -131,7 +135,7 @@ export default function Informes() {
               <StatCard
                 label="Ventas en total"
                 value={formatMoney(general.summary.totalRevenue)}
-                hint={`últimos ${general.period.days} días · ambas sedes`}
+                hint={refundHint(`últimos ${general.period.days} días · ambas sedes`, general.summary.refunded)}
                 tone="success"
               />
               <StatCard
@@ -180,7 +184,7 @@ export default function Informes() {
               <StatCard
                 label="Ingresos totales"
                 value={formatMoney(salesSummary.summary.totalRevenue)}
-                hint={`últimos ${salesSummary.period.days} días`}
+                hint={refundHint(`últimos ${salesSummary.period.days} días`, salesSummary.summary.refunded)}
                 tone="success"
               />
               <StatCard

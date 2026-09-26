@@ -5,8 +5,9 @@ import { paymentMethodLabels } from "../../lib/types";
 import { formatMoney, formatDateTime, formatTime, invoiceCode } from "../../lib/format";
 import { ghostBtnCls } from "../ui/inputs";
 
-// Resumen del cierre de caja: base, ventas, medios de pago, préstamos,
-// descuentos, y efectivo esperado vs contado. El detalle de descuentos se
+// Resumen del cierre de caja: base, lo recibido por medio de pago (que suma
+// las ventas del día, abonos incluidos), préstamos aparte, descuentos,
+// devoluciones, y efectivo esperado vs contado. El detalle de descuentos se
 // carga bajo demanda.
 export function CashSummaryView({ summary }: { summary: CashSummary }) {
   const [showDiscounts, setShowDiscounts] = useState(false);
@@ -16,6 +17,13 @@ export function CashSummaryView({ summary }: { summary: CashSummary }) {
 
   const s = summary;
   const diff = s.difference ?? 0;
+
+  // De dónde salió lo recibido (solo las partes que tuvieron movimiento).
+  const breakdown = [
+    `${s.salesCount} venta${s.salesCount === 1 ? "" : "s"} ${formatMoney(s.salesReceived)}`,
+    ...(s.loanPayments.count > 0 ? [`abonos de clientes ${formatMoney(s.loanPayments.total)}`] : []),
+    ...(s.specialOrders.count > 0 ? [`pedidos especiales ${formatMoney(s.specialOrders.total)}`] : []),
+  ].join(" · ");
 
   const toggleDiscounts = async () => {
     if (showDiscounts) { setShowDiscounts(false); return; }
@@ -47,26 +55,30 @@ export function CashSummaryView({ summary }: { summary: CashSummary }) {
         {row("Base inicial de efectivo", formatMoney(s.session.openingAmount))}
         {s.session.closingAmount != null &&
           row("Efectivo final contado", formatMoney(s.session.closingAmount))}
-        {row(`Ventas del día (${s.salesCount})`, formatMoney(s.totalSales))}
         {row("Recibido en efectivo", formatMoney(s.cashReceived), "text-emerald-400")}
         {row(
           `Recibido por transferencias (Nequi ${formatMoney(s.nequiReceived)} · Bancolombia ${formatMoney(s.bancolombiaReceived)})`,
           formatMoney(s.transferReceived),
           "text-blue-400",
         )}
-        {row(`Préstamos realizados (${s.loans.count})`, formatMoney(s.loans.total), "text-yellow-400")}
+        <div className="py-2 border-b border-slate-800/60">
+          <div className="flex justify-between items-baseline gap-3">
+            <span className="text-sm text-white font-medium">Ventas del día (efectivo + transferencias)</span>
+            <span className="text-lg text-white font-bold">{formatMoney(s.totalSales)}</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">Incluye: {breakdown}</p>
+        </div>
+        {row(
+          `Préstamos realizados (${s.loans.count}) · no se suman a las ventas`,
+          formatMoney(s.loans.total),
+          "text-yellow-400",
+        )}
         {row(`Descuentos aplicados (${s.discounts.count})`, formatMoney(s.discounts.total), "text-yellow-400")}
-        {s.specialOrders.count > 0 &&
+        {s.returns.count > 0 &&
           row(
-            `Pedidos especiales (${s.specialOrders.count} · efectivo ${formatMoney(s.specialOrders.cash)})`,
-            formatMoney(s.specialOrders.total),
-            "text-emerald-400",
-          )}
-        {s.loanPayments.count > 0 &&
-          row(
-            `Abonos de clientes (${s.loanPayments.count} · efectivo ${formatMoney(s.loanPayments.cash)})`,
-            formatMoney(s.loanPayments.total),
-            "text-emerald-400",
+            `Devoluciones (${s.returns.count} · efectivo ${formatMoney(s.returns.cash)})`,
+            `−${formatMoney(s.returns.total)}`,
+            "text-red-400",
           )}
       </div>
 
@@ -96,12 +108,34 @@ export function CashSummaryView({ summary }: { summary: CashSummary }) {
         </div>
       )}
 
+      {s.returns.count > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-slate-400 mb-2">Devoluciones del turno</h4>
+          <div className="space-y-2">
+            {s.returns.rows.map((r, i) => (
+              <div key={i} className="border border-slate-800 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <span className="text-white font-medium">{r.productName} × {r.quantity}</span>
+                  <span className="text-red-400 font-semibold">−{formatMoney(r.amount)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-400">
+                  <span>{paymentMethodLabels[r.paymentMethod] ?? r.paymentMethod}</span>
+                  <span>Venta {invoiceCode(r.invoiceNumber)}</span>
+                  <span>Por: {r.user}</span>
+                  <span>{formatTime(r.createdAt)}</span>
+                </div>
+                {r.reason && <p className="text-xs text-slate-500">Motivo: {r.reason}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-800/50 rounded-lg p-4 space-y-1.5">
         <div className="flex justify-between text-sm">
           <span className="text-slate-300">
             Efectivo esperado (base + efectivo recibido
-            {s.specialOrders.cash > 0 ? " + pedidos especiales" : ""}
-            {s.loanPayments.cash > 0 ? " + abonos" : ""})
+            {s.returns.cash > 0 ? " − devoluciones en efectivo" : ""})
           </span>
           <span className="text-white font-semibold">{formatMoney(s.expectedCash)}</span>
         </div>

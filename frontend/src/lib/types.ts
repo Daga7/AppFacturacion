@@ -64,6 +64,8 @@ export interface LoanPayment {
   amount: number;
   paymentMethod: PaymentMethod;
   createdAt: string;
+  // Registrado sin internet y aún sin enviar al servidor.
+  pending?: boolean;
 }
 
 export interface Loan {
@@ -76,6 +78,7 @@ export interface Loan {
   payments: LoanPayment[];
   sale?: Sale;
   createdAt: string;
+  pending?: boolean;
 }
 
 // En /sales el préstamo viene sin el cliente anidado (ya está en sale.customer).
@@ -99,8 +102,49 @@ export interface Sale {
   details: SaleDetail[];
   payments: SalePayment[];
   loan?: SaleLoan | null;
+  // Devoluciones hechas sobre la venta (módulo de devoluciones del cajero).
+  returns?: SaleReturn[];
   cashSessionId?: string | null;
   createdAt: string;
+  // Hecha sin internet: aún no tiene número de factura.
+  pending?: boolean;
+}
+
+// Devolución de unidades de una línea de venta de contado.
+export interface SaleReturn {
+  id: string;
+  saleId: string;
+  saleDetailId: string;
+  productId: string;
+  quantity: number;
+  refundAmount: number;
+  paymentMethod: PaymentMethod;
+  reason?: string | null;
+  createdAt: string;
+}
+
+// Resultado de buscar por código de barras qué ventas de contado recientes
+// de la sede se pueden devolver (los préstamos no aparecen, solo se cuentan).
+export interface ReturnLookup {
+  product: Product;
+  since: string;
+  windowDays: number;
+  loans: number;
+  sales: ReturnableSale[];
+}
+
+export interface ReturnableSale {
+  saleId: string;
+  saleDetailId: string;
+  invoiceNumber: number;
+  createdAt: string;
+  customerName: string | null;
+  seller: string;
+  quantity: number;
+  returnedQuantity: number;
+  returnableQuantity: number;
+  unitPaid: number;
+  paymentMethods: PaymentMethod[];
 }
 
 // Sesión de caja de una sucursal (apertura → ventas → cierre).
@@ -113,12 +157,18 @@ export interface CashSession {
   openedBy?: { id: string; username: string };
   openedAt: string;
   closedAt?: string | null;
+  pending?: boolean;
 }
 
 export interface CashSummary {
   session: CashSession;
   salesCount: number;
+  // "Ventas del día": todo lo recibido (efectivo + transferencias), abonos y
+  // pedidos especiales incluidos. Los préstamos no suman aquí.
   totalSales: number;
+  // Lo cobrado en las ventas del turno (incluida la cuota inicial de préstamos).
+  salesReceived: number;
+  // Recibido por medio de pago: ventas + abonos + pedidos especiales.
   cashReceived: number;
   nequiReceived: number;
   bancolombiaReceived: number;
@@ -142,8 +192,28 @@ export interface CashSummary {
     bancolombia: number;
     rows: LoanPaymentRow[];
   };
+  // Devoluciones del turno: el efectivo devuelto se resta del esperado.
+  returns: {
+    count: number;
+    total: number;
+    cash: number;
+    nequi: number;
+    bancolombia: number;
+    rows: ReturnRow[];
+  };
   expectedCash: number;
   difference: number | null;
+}
+
+export interface ReturnRow {
+  productName: string;
+  quantity: number;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  invoiceNumber: number;
+  reason?: string | null;
+  user: string;
+  createdAt: string;
 }
 
 export interface LoanPaymentRow {
@@ -196,6 +266,24 @@ export interface TransferRequest {
   product: Product;
   fromBranch: BranchInfo;
   toBranch: BranchInfo;
+  createdAt: string;
+}
+
+// Garantía con el proveedor: mercancía defectuosa de una sede que se le
+// devuelve al proveedor. Sale del inventario cuando el administrador aprueba.
+export interface WarrantyClaim {
+  id: string;
+  branchId: string;
+  productId: string;
+  quantity: number;
+  reason: string;
+  supplier?: string | null;
+  status: RequestStatus;
+  requestedBy: UserRef;
+  resolvedBy?: UserRef | null;
+  resolvedAt?: string | null;
+  product: Product;
+  branch: BranchInfo;
   createdAt: string;
 }
 
@@ -280,5 +368,29 @@ export interface PriceChangeRequest {
   resolvedBy?: UserRef | null;
   resolvedAt?: string | null;
   product: Product;
+  createdAt: string;
+}
+
+// Aviso de algo registrado sin internet que no cuadró al enviarse.
+export type OfflineIssueType =
+  | "NEGATIVE_STOCK"
+  | "OVERPAYMENT"
+  | "LOAN_NOT_FOUND"
+  | "LOAN_ALREADY_CLOSED"
+  | "CASH_ALREADY_OPEN"
+  | "NO_CASH_SESSION"
+  | "REJECTED";
+
+export interface OfflineIssue {
+  id: string;
+  type: OfflineIssueType;
+  message: string;
+  occurredAt: string;
+  saleId?: string | null;
+  loanId?: string | null;
+  branch: BranchInfo;
+  user: UserRef;
+  resolvedAt?: string | null;
+  resolvedBy?: UserRef | null;
   createdAt: string;
 }

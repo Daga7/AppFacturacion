@@ -1,4 +1,6 @@
 // Tipos de las respuestas de /reports/*, compartidos por los paneles de Informes.
+// Todos los montos vienen netos de devoluciones (lo devuelto al cliente ya
+// está restado de la venta original).
 
 export interface ReportPeriod {
   since: string;
@@ -7,7 +9,8 @@ export interface ReportPeriod {
 
 export interface SalesSummary {
   period: ReportPeriod;
-  summary: { totalSales: number; totalRevenue: number; avgTicket: number };
+  // refunded: lo devuelto a los clientes de estas ventas (ya descontado).
+  summary: { totalSales: number; totalRevenue: number; avgTicket: number; refunded: number };
   byDay: Record<string, { count: number; total: number }>;
 }
 
@@ -34,7 +37,7 @@ export interface PaymentSummary {
 
 export interface GeneralSummary {
   period: ReportPeriod;
-  summary: { totalRevenue: number; totalTickets: number; totalProfit: number };
+  summary: { totalRevenue: number; totalTickets: number; totalProfit: number; refunded: number };
   // Ganancia de pedidos especiales entregados y costeados (incluida en
   // totalProfit). Solo aparece en el informe general (perfil admin).
   specialOrders: { count: number; profit: number };
@@ -51,6 +54,8 @@ export interface ProfitRow {
   total: number;
   cost: number;
   profit: number;
+  // Devuelto al cliente (ya descontado de total).
+  returned: number;
 }
 
 export interface ProfitSummary {

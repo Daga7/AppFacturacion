@@ -7,8 +7,9 @@ interface ProfitPanelProps {
   showBranch?: boolean;
 }
 
-// Tabla de ganancias: por cada venta, el total cobrado menos lo que costaron
-// sus productos; al final la suma general.
+// Tabla de ganancias: por cada venta, el total cobrado (sin lo devuelto)
+// menos lo que costaron los productos que se quedó el cliente; al final la
+// suma general.
 export function ProfitPanel({ data, showBranch = false }: ProfitPanelProps) {
   return (
     <Panel title="Ganancias" className="lg:col-span-2">
@@ -30,7 +31,12 @@ export function ProfitPanel({ data, showBranch = false }: ProfitPanelProps) {
                 <td className="py-2 text-white font-medium">{invoiceCode(r.invoiceNumber)}</td>
                 <td className="py-2 text-slate-400">{formatDate(r.createdAt)}</td>
                 {showBranch && <td className="py-2 text-slate-400">{r.branch}</td>}
-                <td className="py-2 text-right text-slate-300">{formatMoney(r.total)}</td>
+                <td className="py-2 text-right text-slate-300">
+                  {formatMoney(r.total)}
+                  {r.returned > 0 && (
+                    <span className="block text-xs text-red-400">devolución −{formatMoney(r.returned)}</span>
+                  )}
+                </td>
                 <td className="py-2 text-right text-slate-400">{formatMoney(r.cost)}</td>
                 <td className={`py-2 text-right font-semibold ${r.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                   {formatMoney(r.profit)}

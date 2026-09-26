@@ -1,6 +1,6 @@
 import type { Sale } from "../../lib/types";
 import { paymentMethodLabels } from "../../lib/types";
-import { formatMoney, formatTime, invoiceCode } from "../../lib/format";
+import { formatMoney, formatTime, saleCode } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { StatusBadge } from "../ui/StatusBadge";
 import { EmptyState } from "../ui/EmptyState";
@@ -35,7 +35,9 @@ export function SalesList({ sales, onSelect, emptyMessage = "No hay ventas regis
             className="p-4 flex items-center gap-4 hover:bg-slate-800/40"
           >
             <div className="w-20 shrink-0">
-              <p className="text-white font-semibold">{invoiceCode(s.invoiceNumber)}</p>
+              <p className={s.pending ? "text-yellow-400 text-sm font-semibold" : "text-white font-semibold"}>
+                {saleCode(s)}
+              </p>
               <p className="text-xs text-slate-500">{formatTime(s.createdAt)}</p>
             </div>
             <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
@@ -44,6 +46,7 @@ export function SalesList({ sales, onSelect, emptyMessage = "No hay ventas regis
               </span>
               <span className="text-sm text-slate-400">{paymentSummary(s)}</span>
               {s.status === "CANCELLED" && <StatusBadge tone="danger">Cancelada</StatusBadge>}
+              {(s.returns?.length ?? 0) > 0 && <StatusBadge tone="neutral">Con devolución</StatusBadge>}
               {s.isCredit && s.status === "COMPLETED" && (
                 <StatusBadge tone="warning">
                   {s.loan?.loanStatus === "PAID" ? "Crédito pagado" : "Crédito activo"}

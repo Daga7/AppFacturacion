@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { api } from "../../lib/api";
-import type { Customer, Product, Sale } from "../../lib/types";
+import type { Customer, Product } from "../../lib/types";
+import { saleOperation, submitOperation } from "../../lib/offline/operations";
 import { formatMoney } from "../../lib/format";
 import { Card } from "../ui/Card";
 import { inputCls, primaryBtnCls } from "../ui/inputs";
@@ -14,7 +14,8 @@ interface LoanFormProps {
   products: Product[];
   customers: Customer[];
   availability: (productId: string) => number;
-  onSaved: (sale: Sale) => void;
+  // Número de factura asignado, o null si quedó guardado sin conexión.
+  onSaved: (invoiceNumber: number | null) => void;
 }
 
 // Generar préstamo = venta a crédito: el cliente se lleva productos y queda
@@ -31,7 +32,8 @@ export function LoanForm({ branchId, products, customers, availability, onSaved 
   const pendiente = total - abono;
 
   const handleSubmit = async () => {
-    if (!customerId) { setError("Selecciona el cliente"); return; }
+    const customer = customers.find((c) => c.id === customerId);
+    if (!customer) { setError("Selecciona el cliente"); return; }
     const parsedLines = parseLines(lines);
     if ("error" in parsedLines) { setError(parsedLines.error); return; }
     const parsedPayments = parsePayments(payments);
@@ -43,17 +45,20 @@ export function LoanForm({ branchId, products, customers, availability, onSaved 
     setSaving(true);
     setError(null);
     try {
-      const sale = await api.post<Sale>("/sales", {
-        branchId,
-        customerId,
-        isCredit: true,
-        details: parsedLines.details,
-        payments: parsedPayments.payments,
-      });
+      const outcome = await submitOperation(
+        saleOperation({
+          branchId,
+          customer,
+          isCredit: true,
+          details: parsedLines.details,
+          payments: parsedPayments.payments,
+          products,
+        }),
+      );
       setCustomerId("");
       setLines([emptySaleLine()]);
       setPayments([]);
-      onSaved(sale);
+      onSaved(outcome.queued ? null : Number(outcome.result.invoiceNumber));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al generar el préstamo");
     }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import type { Product, Sale } from "../../lib/types";
 import { paymentMethodLabels } from "../../lib/types";
-import { formatMoney, formatDateTime, invoiceCode } from "../../lib/format";
+import { formatMoney, formatDateTime, saleCode } from "../../lib/format";
 import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
 import { primaryBtnCls, secondaryBtnCls } from "../ui/inputs";
@@ -98,12 +98,20 @@ export function SaleDetailModal({
     }
   };
 
+  const returns = sale.returns ?? [];
+  const productName = (saleDetailId: string) =>
+    sale.details.find((d) => d.id === saleDetailId)?.product?.name ?? "Producto";
+
   const abonado = sale.loan
     ? sale.loan.payments.reduce((sum, p) => sum + Number(p.amount), 0)
     : 0;
 
   return (
-    <Modal title={`Factura ${invoiceCode(sale.invoiceNumber)}`} onClose={onClose} maxWidth="max-w-2xl">
+    <Modal
+      title={sale.pending ? "Venta sin enviar" : `Factura ${saleCode(sale)}`}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+    >
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
         <span>{formatDateTime(sale.createdAt)}</span>
         <span>· {sale.branch.name}</span>
@@ -116,6 +124,12 @@ export function SaleDetailModal({
         </StatusBadge>
         {sale.isCredit && <StatusBadge tone="warning">Crédito</StatusBadge>}
       </div>
+
+      {sale.pending && (
+        <p className="text-sm text-yellow-400">
+          Se registró sin conexión. Recibe su número de factura cuando se envíe al volver el internet.
+        </p>
+      )}
 
       {editing ? (
         <div className="space-y-4">
@@ -209,9 +223,29 @@ export function SaleDetailModal({
             </div>
           )}
 
+          {returns.length > 0 && (
+            <div className="border-t border-slate-800 pt-3">
+              <p className="text-sm font-medium text-slate-400 mb-2">Devoluciones</p>
+              <div className="space-y-1">
+                {returns.map((r) => (
+                  <div key={r.id} className="flex flex-wrap justify-between gap-2 text-sm">
+                    <span className="text-slate-300">
+                      {r.quantity} × {productName(r.saleDetailId)} · {formatDateTime(r.createdAt)} ·{" "}
+                      {paymentMethodLabels[r.paymentMethod]}
+                      {r.reason ? ` · ${r.reason}` : ""}
+                    </span>
+                    <span className="text-red-400 font-medium">−{formatMoney(r.refundAmount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          {isAdmin && sale.status === "COMPLETED" && (
+          {/* Con devoluciones ya no se puede editar ni cancelar (el backend
+              también lo impide): descuadraría el stock y la caja. */}
+          {isAdmin && sale.status === "COMPLETED" && !sale.pending && returns.length === 0 && (
             <div className="flex gap-2 border-t border-slate-800 pt-4">
               <button onClick={startEdit} className={primaryBtnCls}>
                 Editar venta

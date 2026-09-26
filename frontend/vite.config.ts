@@ -32,26 +32,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // La API nunca se sirve desde el service worker. Lo que el cajero
+        // necesita sin internet lo guarda la propia app en IndexedDB, separado
+        // por sede y con lo registrado sin conexión encima (src/lib/offline):
+        // una caché aquí podría mostrar datos de otro usuario o esconder que
+        // no hay conexión.
         runtimeCaching: [
-          // Datos que cambian con cada operación (ventas, préstamos, caja):
-          // nunca se sirven de caché, porque si se vende o se abona desde otro
-          // dispositivo el aparato debe ver el estado real, no el guardado.
-          // Sin red simplemente fallan, que es lo correcto para dinero.
-          {
-            urlPattern: ({ url }) =>
-              url.origin === new URL(API_URL).origin &&
-              /^\/(sales|loans|cash|special-orders|transfers)(\/|$)/.test(url.pathname),
-            handler: "NetworkOnly",
-          },
-          // Catálogos y datos de apoyo: se pueden leer de caché si no hay red.
           {
             urlPattern: ({ url }) => url.origin === new URL(API_URL).origin,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
-              networkTimeoutSeconds: 5,
-            },
+            handler: "NetworkOnly",
           },
         ],
       },

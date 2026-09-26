@@ -17,6 +17,9 @@ import { SpecialOrdersModule } from './special-orders/special-orders.module';
 import { PurchaseListModule } from './purchase-list/purchase-list.module';
 import { PriceRequestsModule } from './price-requests/price-requests.module';
 import { AuthModule } from './auth/auth.module';
+import { SyncModule } from './sync/sync.module';
+import { ReturnsModule } from './returns/returns.module';
+import { WarrantiesModule } from './warranties/warranties.module';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { AuthModule } from './auth/auth.module';
     PurchaseListModule,
     PriceRequestsModule,
     AuthModule,
+    SyncModule,
+    ReturnsModule,
+    WarrantiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

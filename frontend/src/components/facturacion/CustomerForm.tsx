@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../../lib/api";
 import type { Customer } from "../../lib/types";
+import { useConnection } from "../../lib/offline/connection";
 import { Card } from "../ui/Card";
 import { inputCls, ghostBtnCls } from "../ui/inputs";
 
@@ -15,6 +16,8 @@ export function CustomerForm({ branchId, onSaved }: CustomerFormProps) {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Crear clientes necesita internet.
+  const online = useConnection((s) => s.online);
 
   const handleSubmit = async () => {
     if (!form.firstName.trim()) { setError("El nombre es obligatorio"); return; }
@@ -48,7 +51,8 @@ export function CustomerForm({ branchId, onSaved }: CustomerFormProps) {
         <input placeholder="Dirección" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <button onClick={handleSubmit} disabled={saving} className={ghostBtnCls}>
+      {!online && <p className="text-sm text-yellow-400">Sin conexión: para crear clientes necesitas internet.</p>}
+      <button onClick={handleSubmit} disabled={saving || !online} className={`${ghostBtnCls} disabled:opacity-50`}>
         {saving ? "Guardando..." : "+ Crear cliente"}
       </button>
     </Card>

@@ -7,6 +7,12 @@ import { LoanStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLoanPaymentDto } from './dto/create-loan-payment.dto';
 import { ExchangeLoanDto } from './dto/exchange-loan.dto';
+import {
+  TX_OPTIONS,
+  money,
+  type OfflineContext,
+  type Tx,
+} from '../sync/offline';
 
 @Injectable()
 export class LoansService {
@@ -36,61 +42,97 @@ export class LoansService {
   // Devolución: el cliente regresa la mercancía. Se devuelve el stock, se
   // elimina el préstamo (incluidos sus abonos) y la venta queda cancelada.
   async returnLoan(loanId: string) {
-    const loan = await this.prisma.loan.findUnique({
+    await this.prisma.$transaction(
+      (tx) => this.returnLoanInTx(tx, loanId),
+      TX_OPTIONS,
+    );
+    return { message: 'Préstamo eliminado y mercancía devuelta al inventario' };
+  }
+
+  // Devuelve la sede del préstamo, o null si no se aplicó. Con `offline` (la
+  // devolución ya ocurrió sin internet) un préstamo que ya no está activo no
+  // es un error: se deja la novedad para el administrador.
+  async returnLoanInTx(
+    tx: Tx,
+    loanId: string,
+    offline?: OfflineContext,
+  ): Promise<string | null> {
+    const loan = await tx.loan.findUnique({
       where: { id: loanId },
       include: {
+        customer: true,
         payments: true,
-        sale: { include: { details: true } },
+        sale: { include: { details: { include: { product: true } } } },
       },
     });
-    if (!loan) throw new NotFoundException('Préstamo no encontrado');
-    if (loan.loanStatus === 'PAID') {
-      throw new BadRequestException(
-        'El préstamo ya está pagado; no aplica devolución desde aquí',
-      );
-    }
-    if (loan.sale.status === 'CANCELLED') {
-      throw new BadRequestException('La venta del préstamo ya está cancelada');
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      for (const d of loan.sale.details) {
-        const inventory = await tx.inventory.upsert({
-          where: {
-            branchId_productId: {
-              branchId: loan.sale.branchId,
-              productId: d.productId,
-            },
-          },
-          create: {
-            branchId: loan.sale.branchId,
-            productId: d.productId,
-            amount: d.quantity,
-          },
-          update: { amount: { increment: d.quantity } },
-        });
-        await tx.inventoryMovement.create({
-          data: {
-            inventoryId: inventory.id,
-            productId: d.productId,
-            branchId: loan.sale.branchId,
-            quantity: d.quantity,
-            type: 'RETURN',
-            saleDetailId: d.id,
-            note: 'Devolución de préstamo',
-          },
-        });
-      }
-
-      await tx.loanPayment.deleteMany({ where: { loanId } });
-      await tx.loan.delete({ where: { id: loanId } });
-      await tx.sale.update({
-        where: { id: loan.saleId },
-        data: { status: 'CANCELLED' },
+    if (!loan) {
+      if (!offline) throw new NotFoundException('Préstamo no encontrado');
+      offline.issues.push({
+        type: 'LOAN_NOT_FOUND',
+        loanId,
+        message:
+          'Devolución hecha sin internet de un préstamo que ya no existe (ya se había devuelto o borrado). No se cambió nada.',
       });
+      return null;
+    }
+
+    const blocked =
+      loan.loanStatus === 'PAID'
+        ? 'El préstamo ya está pagado; no aplica devolución desde aquí'
+        : loan.sale.status === 'CANCELLED'
+          ? 'La venta del préstamo ya está cancelada'
+          : null;
+    if (blocked) {
+      if (!offline) throw new BadRequestException(blocked);
+      const products = loan.sale.details
+        .map((d) => `${d.quantity} × ${d.product.name}`)
+        .join(', ');
+      offline.issues.push({
+        type: 'LOAN_ALREADY_CLOSED',
+        loanId,
+        saleId: loan.saleId,
+        message: `Devolución hecha sin internet de ${products} de ${customerName(loan.customer)}, pero ${loan.loanStatus === 'PAID' ? 'el préstamo ya estaba pagado' : 'la venta ya estaba cancelada'}. No se aplicó: la mercancía no se reingresó al inventario.`,
+      });
+      return loan.sale.branchId;
+    }
+
+    for (const d of loan.sale.details) {
+      const inventory = await tx.inventory.upsert({
+        where: {
+          branchId_productId: {
+            branchId: loan.sale.branchId,
+            productId: d.productId,
+          },
+        },
+        create: {
+          branchId: loan.sale.branchId,
+          productId: d.productId,
+          amount: d.quantity,
+        },
+        update: { amount: { increment: d.quantity } },
+      });
+      await tx.inventoryMovement.create({
+        data: {
+          inventoryId: inventory.id,
+          productId: d.productId,
+          branchId: loan.sale.branchId,
+          quantity: d.quantity,
+          type: 'RETURN',
+          saleDetailId: d.id,
+          note: 'Devolución de préstamo',
+          createdAt: offline?.occurredAt,
+        },
+      });
+    }
+
+    await tx.loanPayment.deleteMany({ where: { loanId } });
+    await tx.loan.delete({ where: { id: loanId } });
+    await tx.sale.update({
+      where: { id: loan.saleId },
+      data: { status: 'CANCELLED' },
     });
 
-    return { message: 'Préstamo eliminado y mercancía devuelta al inventario' };
+    return loan.sale.branchId;
   }
 
   // Cambio de mercancía: los productos nuevos reemplazan a los del préstamo.
@@ -227,53 +269,93 @@ export class LoansService {
   }
 
   async addPayment(loanId: string, dto: CreateLoanPaymentDto) {
-    const loan = await this.prisma.loan.findUnique({
+    const result = await this.prisma.$transaction(
+      (tx) => this.addPaymentInTx(tx, loanId, dto),
+      TX_OPTIONS,
+    );
+    return JSON.parse(JSON.stringify(result)) as NonNullable<typeof result>;
+  }
+
+  // Con `offline` el abono ya se cobró sin internet: si el préstamo ya no
+  // existe, ya estaba pagado o el abono supera el saldo, no se rechaza sino
+  // que se anota la novedad. Devuelve null solo si no hubo dónde registrarlo.
+  async addPaymentInTx(
+    tx: Tx,
+    loanId: string,
+    dto: CreateLoanPaymentDto,
+    offline?: OfflineContext,
+  ) {
+    const loan = await tx.loan.findUnique({
       where: { id: loanId },
-      include: { sale: { select: { branchId: true } } },
+      include: { customer: true, sale: { select: { branchId: true } } },
     });
-    if (!loan) throw new NotFoundException('Préstamo no encontrado');
-    if (loan.loanStatus === 'PAID') {
+    if (!loan) {
+      if (!offline) throw new NotFoundException('Préstamo no encontrado');
+      offline.issues.push({
+        type: 'LOAN_NOT_FOUND',
+        loanId,
+        message: `Abono de ${money(dto.amount)} cobrado sin internet a un préstamo que ya no existe (se devolvió o se borró). El dinero no quedó registrado en ninguna caja.`,
+      });
+      return null;
+    }
+    if (loan.loanStatus === 'PAID' && !offline) {
       throw new BadRequestException('El préstamo ya está pagado');
     }
 
     // El abono entra a la caja abierta de la sede donde se hizo el préstamo,
     // para que aparezca en el cierre y en el informe de Telegram.
-    const openSession = await this.prisma.cashSession.findFirst({
+    const openSession = await tx.cashSession.findFirst({
       where: { branchId: loan.sale.branchId, status: 'OPEN' },
       select: { id: true },
     });
 
     const pending = Number(loan.pendingAmount);
     if (dto.amount > pending + 0.01) {
-      throw new BadRequestException(
-        `El abono (${dto.amount}) supera el saldo pendiente (${pending})`,
-      );
+      if (!offline) {
+        throw new BadRequestException(
+          `El abono (${dto.amount}) supera el saldo pendiente (${pending})`,
+        );
+      }
+      offline.issues.push({
+        type: 'OVERPAYMENT',
+        loanId,
+        saleId: loan.saleId,
+        message: `Abono de ${money(dto.amount)} de ${customerName(loan.customer)} cobrado sin internet, pero solo debía ${money(pending)}: sobran ${money(dto.amount - pending)}. Revisa si hay que devolverle dinero.`,
+      });
+    }
+    if (!openSession && offline) {
+      offline.issues.push({
+        type: 'NO_CASH_SESSION',
+        loanId,
+        saleId: loan.saleId,
+        message: `Abono de ${money(dto.amount)} de ${customerName(loan.customer)} cobrado sin internet cuando no había caja abierta; no aparece en ningún cierre de caja.`,
+      });
     }
 
     const newPending = Math.max(0, pending - dto.amount);
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const payment = await tx.loanPayment.create({
-        data: {
-          loanId,
-          amount: dto.amount,
-          paymentMethod: dto.paymentMethod,
-          cashSessionId: openSession?.id ?? null,
-        },
-      });
-
-      const updated = await tx.loan.update({
-        where: { id: loanId },
-        data: {
-          pendingAmount: newPending,
-          loanStatus: newPending <= 0 ? 'PAID' : 'ACTIVE',
-        },
-        include: { customer: true, payments: true },
-      });
-
-      return { payment, loan: updated };
+    const payment = await tx.loanPayment.create({
+      data: {
+        loanId,
+        amount: dto.amount,
+        paymentMethod: dto.paymentMethod,
+        cashSessionId: openSession?.id ?? null,
+        createdAt: offline?.occurredAt,
+      },
     });
 
-    return JSON.parse(JSON.stringify(result)) as typeof result;
+    const updated = await tx.loan.update({
+      where: { id: loanId },
+      data: {
+        pendingAmount: newPending,
+        loanStatus: newPending <= 0 ? 'PAID' : 'ACTIVE',
+      },
+      include: { customer: true, payments: true },
+    });
+
+    return { payment, loan: updated, branchId: loan.sale.branchId };
   }
 }
+
+const customerName = (c: { firstName: string; lastName: string | null }) =>
+  `${c.firstName} ${c.lastName ?? ''}`.trim();
