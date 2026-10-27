@@ -1,0 +1,3917 @@
+[
+ {
+  "barcode": "001001",
+  "name": "PACHA A01 CORE CM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001051",
+  "name": "PACHA A11 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001101",
+  "name": "PACHA A35 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001151",
+  "name": "PACHA E22 - E22I SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001002",
+  "name": "PACHA A03 - A02S - A03S SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001052",
+  "name": "PACHA A11 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001102",
+  "name": "PACHA A36 - A56 SM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001152",
+  "name": "PACHA E22 CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001003",
+  "name": "PACHA A02 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001053",
+  "name": "PACHA A12 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001103",
+  "name": "PACHA A36 CM",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001153",
+  "name": "PACHA E40 - E30 SM",
+  "salePrice": 54000
+ },
+ {
+  "barcode": "001004",
+  "name": "PACHA A02 - A12 - M12 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001054",
+  "name": "PACHA A13 4G CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001104",
+  "name": "PACHA A51 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001154",
+  "name": "PACHA E40 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001005",
+  "name": "PACHA A03 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001055",
+  "name": "PACHA A13 4G SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001105",
+  "name": "PACHA A51 SM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001155",
+  "name": "PACHA E32 SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001006",
+  "name": "PACHA A02S CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001056",
+  "name": "PACHA A13 5G SM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001106",
+  "name": "PACHA A52 4G CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001156",
+  "name": "PACHA MOTO E32 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001007",
+  "name": "PACHA A03S CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001057",
+  "name": "PACHA A13 5G CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001107",
+  "name": "PACHA A52 4G SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001157",
+  "name": "PACHA Y5 2018",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001008",
+  "name": "PACHA A03 CORE CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001058",
+  "name": "PACHA A14 4G SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001108",
+  "name": "PACHA A13 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001158",
+  "name": "PACHA Y5 P",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001009",
+  "name": "PACHA A03 CORE SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001059",
+  "name": "PACHA A14 4G CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001109",
+  "name": "PACHA A53 SM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001159",
+  "name": "PACHA Y5 2017",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001010",
+  "name": "PACHA A04 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001060",
+  "name": "PACHA A14 5G CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001110",
+  "name": "PACHA A54 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001160",
+  "name": "PACHA Y5 2019",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001011",
+  "name": "PACHA A04 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001061",
+  "name": "PACHA A14 5G SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001111",
+  "name": "PACHA A54 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001161",
+  "name": "PACHA Y5-2",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001012",
+  "name": "PACHA A04S SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001062",
+  "name": "PACHA A15 SM",
+  "salePrice": 57000
+ },
+ {
+  "barcode": "001112",
+  "name": "PACHA A55 - A35 SM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001162",
+  "name": "PACHA Y6-2",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001013",
+  "name": "PACHA A04S CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001063",
+  "name": "PACHA A15 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001113",
+  "name": "PACHA A55 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001163",
+  "name": "PACHA Y6 P",
+  "salePrice": 57000
+ },
+ {
+  "barcode": "001014",
+  "name": "PACHA A04E CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001064",
+  "name": "PACHA A16 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001114",
+  "name": "PACHA A36 - A56",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001164",
+  "name": "PACHA Y6 2018",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001015",
+  "name": "PACHA A05 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001065",
+  "name": "PACHA A16 CM 4G",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001115",
+  "name": "PACHA A56 CM",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001165",
+  "name": "PACHA Y6 2019",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001016",
+  "name": "PACHA A05 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001066",
+  "name": "PACHA A16 5G CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001116",
+  "name": "PACHA A70 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001166",
+  "name": "PACHA Y6 P",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001017",
+  "name": "PACHA A05S SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001067",
+  "name": "PACHA A20 SM",
+  "salePrice": 51000
+ },
+ {
+  "barcode": "001117",
+  "name": "PACHA A70 SM",
+  "salePrice": 63000
+ },
+ {
+  "barcode": "001167",
+  "name": "PACHA Y7 2017",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001018",
+  "name": "PACHA A05S CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001068",
+  "name": "PACHA A20 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001118",
+  "name": "PACHA A71 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001168",
+  "name": "PACHA Y7 2018",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001019",
+  "name": "PACHA A06 SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001069",
+  "name": "PACHA A20S SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001119",
+  "name": "PACHA A71 SM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001169",
+  "name": "PACHA EDGE 20 LITE",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001020",
+  "name": "PACHA A06 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001070",
+  "name": "PACHA A20S CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001120",
+  "name": "PACHA A72 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001170",
+  "name": "PACHA G52 - G72 - G82 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001021",
+  "name": "PACHA A07 SM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001071",
+  "name": "PACHA S20 FE",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001121",
+  "name": "PACHA A72 SM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001171",
+  "name": "PACHA G52 CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001022",
+  "name": "PACHA A07 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001072",
+  "name": "PACHA A21S SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001122",
+  "name": "PACHA M23 - M33 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001172",
+  "name": "PACHA G14 - G54 - G55",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001023",
+  "name": "PACHA A10 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001073",
+  "name": "PACHA A21S CM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001123",
+  "name": "PACHA M23 - M33 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001173",
+  "name": "PACHA G14 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001024",
+  "name": "PACHA A10 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001074",
+  "name": "PACHA A22 4G SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001124",
+  "name": "PACHA M34 SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001174",
+  "name": "PACHA G54 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001025",
+  "name": "PACHA J1 2016",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001075",
+  "name": "PACHA A22 4G CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001125",
+  "name": "PACHA M34 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001175",
+  "name": "PACHA G84 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001026",
+  "name": "PACHA J1 ACE",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001076",
+  "name": "PACHA A22 5G SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001126",
+  "name": "PACHA M32 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001176",
+  "name": "PACHA G84 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001027",
+  "name": "PACHA J2",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001077",
+  "name": "PACHA A22 5G CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001127",
+  "name": "PACHA M32 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001177",
+  "name": "PACHA G60 - G60S - G31 5G",
+  "salePrice": 57000
+ },
+ {
+  "barcode": "001028",
+  "name": "PACHA J2 PRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001078",
+  "name": "PACHA A23 - M33 SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001128",
+  "name": "PACHA M15 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001178",
+  "name": "PACHA G60 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001029",
+  "name": "PACHA J2 PRIME",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001079",
+  "name": "PACHA A23 - M33 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001129",
+  "name": "PACHA M21 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001179",
+  "name": "PACHA G50 - G40",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001030",
+  "name": "PACHA J2 CORE",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001080",
+  "name": "PACHA A23 5G SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001130",
+  "name": "PACHA M30 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001180",
+  "name": "PACHA G100",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001031",
+  "name": "PACHA J3",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001081",
+  "name": "PACHA A23 5G CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001131",
+  "name": "PACHA M31 SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001181",
+  "name": "PACHA G200",
+  "salePrice": 105000
+ },
+ {
+  "barcode": "001032",
+  "name": "PACHA J4",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001082",
+  "name": "PACHA A24 - A25 SM",
+  "salePrice": 58000
+ },
+ {
+  "barcode": "001132",
+  "name": "PACHA M31 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001182",
+  "name": "PACHA G50 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001033",
+  "name": "PACHA J5",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001083",
+  "name": "PACHA A24 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001133",
+  "name": "PACHA M12 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001183",
+  "name": "PACHA G72 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001034",
+  "name": "PACHA J5 METAL",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001084",
+  "name": "PACHA A25 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001134",
+  "name": "PACHA G1",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001184",
+  "name": "PACHA G75 SM - $80",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001035",
+  "name": "PACHA J5 PRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001085",
+  "name": "PACHA A26 CM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001135",
+  "name": "PACHA G3",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001185",
+  "name": "PACHA E4",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001036",
+  "name": "PACHA J5 PRIME",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001086",
+  "name": "PACHA A30 - A50 SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001136",
+  "name": "PACHA G4 SM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001186",
+  "name": "PACHA E4 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001037",
+  "name": "PACHA J6 - A6",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001087",
+  "name": "PACHA A30 - A50 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001137",
+  "name": "PACHA G STYLUS 2022",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001187",
+  "name": "PACHA E5 PLAY GO",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001038",
+  "name": "PACHA J6 PLUS",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001088",
+  "name": "PACHA A30S CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001138",
+  "name": "PACHA G4 CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001188",
+  "name": "PACHA E5 PLUS",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001039",
+  "name": "PACHA J4 CORE",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001089",
+  "name": "PACHA A30S SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001139",
+  "name": "PACHA G STYLUS 2023",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001189",
+  "name": "PACHA E5 PLAY CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001040",
+  "name": "PACHA J4 PLUS",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001090",
+  "name": "PACHA A31 SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001140",
+  "name": "PACHA ONE HYPER",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001190",
+  "name": "PACHA E9S - E9I",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001041",
+  "name": "PACHA J7 - J7 NEO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001091",
+  "name": "PACHA A31 CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001141",
+  "name": "PACHA MOTO ONE",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001191",
+  "name": "PACHA E9 PLUS",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001042",
+  "name": "PACHA J7 PRIME",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001092",
+  "name": "PACHA A32 4G SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001142",
+  "name": "PACHA ONE FUSION SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001192",
+  "name": "PACHA E6 PLAY",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001043",
+  "name": "PACHA J7 PRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001093",
+  "name": "PACHA A32 4G CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001143",
+  "name": "PACHA ONE FUSION CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001193",
+  "name": "PACHA G4 PLAY - E7 PLUS SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001044",
+  "name": "PACHA J8 - J8 PLUS",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001094",
+  "name": "PACHA A32 5G SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001144",
+  "name": "PACHA ONE FUSION PLUS",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001194",
+  "name": "PACHA G9 PLAY CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001045",
+  "name": "PACHA J7 METAL",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001095",
+  "name": "PACHA A32 5G CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001145",
+  "name": "PACHA E7 - E7I POWER",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001195",
+  "name": "PACHA G9 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001046",
+  "name": "PACHA A01 M",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001096",
+  "name": "PACHA A33 5G SM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001146",
+  "name": "PACHA E7 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001196",
+  "name": "PACHA G9 POWER",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001047",
+  "name": "PACHA A01 Z",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001097",
+  "name": "PACHA A33 5G CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001147",
+  "name": "PACHA MOTO E20 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001197",
+  "name": "PACHA G9 POWER CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001048",
+  "name": "PACHA A01 CORE SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001098",
+  "name": "PACHA A34 CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001148",
+  "name": "PACHA E20 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001198",
+  "name": "PACHA G13 - G23",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001049",
+  "name": "PACHA A10S SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001099",
+  "name": "PACHA A34 SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001149",
+  "name": "PACHA MOTO E13",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001199",
+  "name": "PACHA G13 - G23 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001050",
+  "name": "PACHA A10S CM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001100",
+  "name": "PACHA A35 - A55 SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001150",
+  "name": "PACHA E13 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001200",
+  "name": "PACHA G34",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001201",
+  "name": "PACHA G10 - G20 - G30 CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001251",
+  "name": "PACHA NOTE 9S - 9 PRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001301",
+  "name": "PACHA REDMI A3 AC",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001351",
+  "name": "PACHA MI 10T PRO 5G - MI 10T 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001202",
+  "name": "PACHA G10 - G20 - G30 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001252",
+  "name": "PACHA NOTE 9S CM - 9 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001302",
+  "name": "PACHA REDMI A3 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001352",
+  "name": "PACHA MI 11 LITE 5G",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001203",
+  "name": "PACHA G22 CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001253",
+  "name": "PACHA NOTE 10 - 10S SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001303",
+  "name": "PACHA REDMI A5",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001353",
+  "name": "PACHA MI 11 LITE 4G",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001204",
+  "name": "PACHA G22 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001254",
+  "name": "PACHA NOTE 10 5G - M3 PRO",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001304",
+  "name": "PACHA REDMI 5 PLUS",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001354",
+  "name": "PACHA MI 11T - MI 11T PRO",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001205",
+  "name": "PACHA MOTO G25",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001255",
+  "name": "PACHA NOTE 10 5G SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001305",
+  "name": "PACHA REDMI 6",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001355",
+  "name": "PACHA MI 12T - MI 12T PRO",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001206",
+  "name": "PACHA G31 - G41 - G42",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001256",
+  "name": "PACHA NOTE 10 - 10S CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001306",
+  "name": "PACHA REDMI A5 CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001356",
+  "name": "PACHA MI 12 LITE 5G",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001207",
+  "name": "PACHA G32 - E15",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001257",
+  "name": "PACHA 10 PRO - 11 PRO - 12 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001307",
+  "name": "PACHA REDMI 7",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001357",
+  "name": "PACHA MI 13T",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001208",
+  "name": "PACHA G05 - G15 - G35",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001258",
+  "name": "PACHA NOTE 10 PRO CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001308",
+  "name": "PACHA REDMI 7A",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001358",
+  "name": "PACHA POCO X3 GT",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001209",
+  "name": "PACHA G05 - G15 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001259",
+  "name": "PACHA NOTE 11 - 11S - 12S CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001309",
+  "name": "PACHA REDMI 8 - 8A",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001359",
+  "name": "PACHA POCO X3 - X3 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001210",
+  "name": "PACHA G06 SM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001260",
+  "name": "PACHA NOTE 11 5G - M4 PRO 5G",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001310",
+  "name": "PACHA REDMI 9 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001360",
+  "name": "PACHA POCO X6",
+  "salePrice": 110000
+ },
+ {
+  "barcode": "001211",
+  "name": "PACHA G82 CM",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001261",
+  "name": "PACHA NOTE 11 - 11S - 12S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001311",
+  "name": "PACHA REDMI 9 SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001361",
+  "name": "PACHA POCO X6 PRO",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001212",
+  "name": "PACHA G31 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001262",
+  "name": "PACHA NOTE 12 PRO 5G",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001312",
+  "name": "PACHA Y7 2019",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001362",
+  "name": "PACHA POCO PRO 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001213",
+  "name": "PACHA G04S - G04 - G14",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001263",
+  "name": "PACHA NOTE 12 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001313",
+  "name": "PACHA Y7 - Y7 PRIME",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001363",
+  "name": "PACHA POCO F3",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001214",
+  "name": "PACHA G04 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001264",
+  "name": "PACHA REDMI 9A - 9C - 10A SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001314",
+  "name": "PACHA Y7 P",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001364",
+  "name": "PACHA POCO F4 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001215",
+  "name": "PACHA G24 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001265",
+  "name": "PACHA REDMI 9A - 9C - 10A CM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001315",
+  "name": "PACHA Y7A",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001365",
+  "name": "PACHA POCO F5 PRO",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001216",
+  "name": "PACHA EDGE 30 NEO",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001266",
+  "name": "PACHA REDMI 9T - POCO M3 SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001316",
+  "name": "PACHA Y8P",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001366",
+  "name": "PACHA POCO X5 PRO",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001217",
+  "name": "PACHA ONE VISION",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001267",
+  "name": "PACHA REDMI 9T CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001317",
+  "name": "PACHA Y9 2018",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001367",
+  "name": "PACHA POCO M4 5G",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001218",
+  "name": "PACHA G5",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001268",
+  "name": "PACHA REDMI 10 CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001318",
+  "name": "PACHA Y9A",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001368",
+  "name": "PACHA POCO M5 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001219",
+  "name": "PACHA G6",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001269",
+  "name": "PACHA REDMI 10 SM",
+  "salePrice": 53000
+ },
+ {
+  "barcode": "001319",
+  "name": "PACHA Y9 2019 - Y8S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001369",
+  "name": "PACHA POCO C40",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001220",
+  "name": "PACHA G2",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001270",
+  "name": "PACHA REDMI 10 5G CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001320",
+  "name": "PACHA Y9 PRIME - Y9S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001370",
+  "name": "PACHA POCO M4 PRO 5G",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001221",
+  "name": "PACHA G4 PLAY",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001271",
+  "name": "PACHA REDMI 10 5G - POCO M3 SM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001321",
+  "name": "PACHA Y9S CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001371",
+  "name": "PACHA NOKIA G10 - G20",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001222",
+  "name": "PACHA G4 PLUS",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001272",
+  "name": "PACHA REDMI 10C SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001322",
+  "name": "PACHA Y9 PRIME CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001372",
+  "name": "PACHA NOKIA G11",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001223",
+  "name": "PACHA MOTO C",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001273",
+  "name": "PACHA REDMI 10C CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001323",
+  "name": "PACHA P8 LITE",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001373",
+  "name": "PACHA NOKIA G11 PLUS",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001224",
+  "name": "PACHA MOTO Z PLAY",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001274",
+  "name": "PACHA REDMI 12 - 13",
+  "salePrice": 58000
+ },
+ {
+  "barcode": "001324",
+  "name": "PACHA P9 LITE 2017",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001374",
+  "name": "PACHA NOKIA G21",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001225",
+  "name": "PACHA MOTO C PLUS SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001275",
+  "name": "PACHA REDMI 12 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001325",
+  "name": "PACHA P8",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001375",
+  "name": "PACHA NOKIA G50",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001226",
+  "name": "PACHA MOTO C PLUS CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001276",
+  "name": "PACHA REDMI 13 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001326",
+  "name": "PACHA P9 LITE",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001376",
+  "name": "PACHA NOKIA G60",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001227",
+  "name": "PACHA G5S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001277",
+  "name": "PACHA REDMI 12C CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001327",
+  "name": "PACHA P9 LITE SMART",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001377",
+  "name": "PACHA NOKIA G50 5G",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001228",
+  "name": "PACHA G5 PLUS",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001278",
+  "name": "PACHA REDMI 12C SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001328",
+  "name": "PACHA P9 PLUS",
+  "salePrice": 145000
+ },
+ {
+  "barcode": "001378",
+  "name": "PACHA NOKIA C20 - C30",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001229",
+  "name": "PACHA G6 PLAY",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001279",
+  "name": "PACHA REDMI 13C CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001329",
+  "name": "PACHA P20 PRO",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001379",
+  "name": "PACHA NOKIA C21 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001230",
+  "name": "PACHA G6 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001280",
+  "name": "PACHA REDMI 13C SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001330",
+  "name": "PACHA P10 - P10 SELFIE",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001380",
+  "name": "PACHA NOKIA 1.4",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001231",
+  "name": "PACHA G7 POWER SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001281",
+  "name": "PACHA REDMI 14C SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001331",
+  "name": "PACHA P10 LITE",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001381",
+  "name": "PACHA NOKIA 2.3",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001232",
+  "name": "PACHA G7 POWER CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001282",
+  "name": "PACHA REDMI 14C CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001332",
+  "name": "PACHA P20",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001382",
+  "name": "PACHA NOKIA 2.4",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001233",
+  "name": "PACHA G7 PLAY",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001283",
+  "name": "PACHA REDMI 15 SM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001333",
+  "name": "PACHA P20 LITE",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001383",
+  "name": "PACHA NOKIA 5.1",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001234",
+  "name": "PACHA G7 - G7 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001284",
+  "name": "PACHA REDMI 15 CM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001334",
+  "name": "PACHA P30 - P30 LEICA",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001384",
+  "name": "PACHA NOKIA 3.4 - 5.4",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001235",
+  "name": "PACHA G8 PLAY - ONE MACRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001285",
+  "name": "PACHA REDMI 15C SM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001335",
+  "name": "PACHA P20 PRO",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001385",
+  "name": "PACHA NOKIA 5.3",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001236",
+  "name": "PACHA G8 PLUS CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001286",
+  "name": "PACHA REDMI 15C CM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001336",
+  "name": "PACHA NOTE 12 SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001386",
+  "name": "PACHA NOKIA 6.2 - 7.2",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001237",
+  "name": "PACHA G8 PLUS",
+  "salePrice": 53000
+ },
+ {
+  "barcode": "001287",
+  "name": "PACHA NOTE 5",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001337",
+  "name": "PACHA NOTE 13 4G - 14 SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001387",
+  "name": "PACHA VIVO Y81 - Y83",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001238",
+  "name": "PACHA G8 POWER LITE",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001288",
+  "name": "PACHA P30 LITE",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001338",
+  "name": "PACHA NOTE 13 4G CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001388",
+  "name": "PACHA VIVO Y11 - Y15",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001239",
+  "name": "PACHA G8 POWER SM",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001289",
+  "name": "PACHA P40 LITE",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001339",
+  "name": "PACHA NOTE 13 5G SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001389",
+  "name": "PACHA VIVO Y1S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001240",
+  "name": "PACHA G8 POWER CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001290",
+  "name": "PACHA P30 LITE CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001340",
+  "name": "PACHA NOTE 14 CM",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001390",
+  "name": "PACHA VIVO Y04 - Y05 - Y37",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001241",
+  "name": "PACHA NOTE 5 PLUS",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001291",
+  "name": "PACHA PSMART 2018",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001341",
+  "name": "PACHA NOTE 13 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001391",
+  "name": "PACHA VIVO Y22 - Y22S - Y17S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001242",
+  "name": "PACHA NOTE 6 PRO",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001292",
+  "name": "PACHA PSMART 2019 - 2020",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001342",
+  "name": "PACHA NOTE 13 PRO CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001392",
+  "name": "PACHA Y16",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001243",
+  "name": "PACHA NOTE 7",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001293",
+  "name": "PACHA MATE 9 LITE",
+  "salePrice": 78000
+ },
+ {
+  "barcode": "001343",
+  "name": "PACHA NOTE 13 PRO 5G",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001393",
+  "name": "PACHA VIVO Y19",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001244",
+  "name": "PACHA NOTE 8T",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001294",
+  "name": "PACHA MATE 9",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001344",
+  "name": "PACHA MI A1",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001394",
+  "name": "PACHA Y01 - Y20S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001245",
+  "name": "PACHA NOTE 8 PRO",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001295",
+  "name": "PACHA MATE 10 PRO",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001345",
+  "name": "PACHA MI A2",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001395",
+  "name": "PACHA Y20S CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001246",
+  "name": "PACHA NOTE 8 SM",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001296",
+  "name": "PACHA MATE 20 LITE",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001346",
+  "name": "PACHA MI A2 LITE",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001396",
+  "name": "PACHA Y21 - Y21S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001247",
+  "name": "PACHA NOTE 8 CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001297",
+  "name": "PACHA MATE 20 LITE CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001347",
+  "name": "PACHA MI A3",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001397",
+  "name": "PACHA Y21S CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001248",
+  "name": "PACHA NOTE 8 PRO CM",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001298",
+  "name": "PACHA REDMI A1 - A2",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001348",
+  "name": "PACHA MI 8 LITE",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001398",
+  "name": "PACHA VIVO Y30",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001249",
+  "name": "PACHA NOTE 9 SM",
+  "salePrice": 53000
+ },
+ {
+  "barcode": "001299",
+  "name": "PACHA REDMI A2 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001349",
+  "name": "PACHA MI 9T - 9T PRO",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001399",
+  "name": "PACHA VIVO Y33S - Y51",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001250",
+  "name": "PACHA NOTE 9 CM",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001300",
+  "name": "PACHA REDMI A3",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001350",
+  "name": "PACHA MI 10 LITE",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001400",
+  "name": "PACHA VIVO Y35",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001401",
+  "name": "PACHA VIVO Y36 4G",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001451",
+  "name": "PACHA NOVA Y61",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001501",
+  "name": "PACHA REALME 9",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001551",
+  "name": "PACHA ZTE A22 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001402",
+  "name": "PACHA Y36 5G - Y27S",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001452",
+  "name": "PACHA NOVA Y90",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001502",
+  "name": "PACHA SPARK 10 PRO",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001552",
+  "name": "PACHA ZTE A25 4G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001403",
+  "name": "PACHA VIVO Y38 4G",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001453",
+  "name": "PACHA NOVA Y91",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001503",
+  "name": "PACHA CAMON 20",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001553",
+  "name": "PACHA ZTE A25 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001404",
+  "name": "PACHA VIVO Y38 5G - Y19S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001454",
+  "name": "PACHA REALME C21Y",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001504",
+  "name": "PACHA SMART 6 PLUS",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001554",
+  "name": "PACHA ZTE V40 V50 DESIGN",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001405",
+  "name": "PACHA VIVO Y39",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001455",
+  "name": "PACHA REALME C11 - C15",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001505",
+  "name": "PACHA CAMON 18P",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001555",
+  "name": "PACHA NUBIA POCO PRO 5G",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001406",
+  "name": "PACHA VIVO Y34 5G",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001456",
+  "name": "PACHA REALME C11 2021",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001506",
+  "name": "PACHA GO 2022",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001556",
+  "name": "PACHA ZTE L210",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001407",
+  "name": "PACHA VIVO Y50",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001457",
+  "name": "PACHA REALME C31",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001507",
+  "name": "PACHA CAMON 15 PRO",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001557",
+  "name": "PACHA ZTE L220",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001408",
+  "name": "PACHA VIVO Y70",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001458",
+  "name": "PACHA REALME NOTE 60",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001508",
+  "name": "PACHA GO 2023",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001558",
+  "name": "PACHA ZTE A30E",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001409",
+  "name": "PACHA VIVO Y90",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001459",
+  "name": "PACHA REALME C30 - C33",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001509",
+  "name": "PACHA SPARK 10C CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001559",
+  "name": "PACHA ZTE A76 5G",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001410",
+  "name": "PACHA VIVO Y91",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001460",
+  "name": "PACHA REALME C61 - C63",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001510",
+  "name": "PACHA GO 2024",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001560",
+  "name": "PACHA ZTE A76 4G",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001411",
+  "name": "PACHA VIVO V20",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001461",
+  "name": "PACHA REALME NOTE 50",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001511",
+  "name": "PACHA GO 2025",
+  "salePrice": 50000
+ },
+ {
+  "barcode": "001561",
+  "name": "PACHA ZTE V40 VITA",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001412",
+  "name": "PACHA VIVO V21E - V25E",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001462",
+  "name": "PACHA REALME C35",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001512",
+  "name": "PACHA GO 02 - GO 2026",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001562",
+  "name": "PACHA ZTE V50 DESIGN",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001413",
+  "name": "PACHA VIVO V30 SE",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001463",
+  "name": "PACHA REALME C67 4G",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001513",
+  "name": "PACHA SMART 10",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001563",
+  "name": "PACHA ZTE V60",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001414",
+  "name": "PACHA V40 LITE",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001464",
+  "name": "PACHA REALME C55 CM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001514",
+  "name": "PACHA SPARK 30 4G",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001564",
+  "name": "PACHA NUBIA NEO 2",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001415",
+  "name": "PACHA V40 5G",
+  "salePrice": 110000
+ },
+ {
+  "barcode": "001465",
+  "name": "PACHA REALME C55",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001515",
+  "name": "PACHA HOT 40I CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001565",
+  "name": "PACHA ZTE V40",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001416",
+  "name": "PACHA V25E 5G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001466",
+  "name": "PACHA LG K22",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001516",
+  "name": "PACHA NOTE 50 PRO",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001566",
+  "name": "PACHA A12 - A02 SM AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001417",
+  "name": "PACHA SPARK INFINIX S",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001467",
+  "name": "PACHA LG K6 - K11S",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001517",
+  "name": "PACHA NOTE 7",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001567",
+  "name": "PACHA A02S - A03 AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001418",
+  "name": "PACHA NOTE 7 LITE",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001468",
+  "name": "PACHA LG K42",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001518",
+  "name": "PACHA NOTE 12",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001568",
+  "name": "PACHA A04 SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001419",
+  "name": "PACHA SPARK 6 GO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001469",
+  "name": "PACHA LG K10",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001519",
+  "name": "PACHA CAMON 40",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001569",
+  "name": "PACHA A04 CM AC",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001420",
+  "name": "PACHA SPARK 5 AIR",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001470",
+  "name": "PACHA LG K51S",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001520",
+  "name": "PACHA SPARK 30 PRO",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001570",
+  "name": "PACHA A06 SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001421",
+  "name": "PACHA SPARK 6 - HOT 10",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001471",
+  "name": "PACHA LG K61",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001521",
+  "name": "PACHA HOT 9",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001571",
+  "name": "PACHA A10 SM AC",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001422",
+  "name": "PACHA TECNO SPARK 7",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001472",
+  "name": "PACHA LG K60",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001522",
+  "name": "PACHA HOT 11 2022",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001572",
+  "name": "PACHA A10S SM AC",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001423",
+  "name": "PACHA TECNO SPARK 7 PRO",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001473",
+  "name": "PACHA RENO 5 LITE",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001523",
+  "name": "PACHA HOT 20",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001573",
+  "name": "PACHA A05 SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001424",
+  "name": "PACHA SPARK 8T - 8P - 8 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001474",
+  "name": "PACHA RENO 7 4G",
+  "salePrice": 62000
+ },
+ {
+  "barcode": "001524",
+  "name": "PACHA HOT 11S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001574",
+  "name": "PACHA A14 5G SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001425",
+  "name": "PACHA SPARK 8 PRO",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001475",
+  "name": "PACHA RENO 7 5G",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001525",
+  "name": "PACHA CAMON 20 PRO",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001575",
+  "name": "PACHA A05 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001426",
+  "name": "PACHA SPARK 20 PRO",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001476",
+  "name": "PACHA RENO 12 F",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001526",
+  "name": "PACHA HONOR X5C",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001576",
+  "name": "PACHA A20S AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001427",
+  "name": "PACHA HOT 20",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001477",
+  "name": "PACHA OPPO A15",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001527",
+  "name": "PACHA HONOR X6 - X6S",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001577",
+  "name": "PACHA A24 CM AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001428",
+  "name": "PACHA HOT 30I",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001478",
+  "name": "PACHA HOT 30",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001528",
+  "name": "PACHA X5B - X5B PLUS",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001578",
+  "name": "PACHA J6 AC",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001429",
+  "name": "PACHA HOT 10",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001479",
+  "name": "PACHA HOT 30 PRO",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001529",
+  "name": "PACHA HONOR X6A CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001579",
+  "name": "PACHA A21S SM AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001430",
+  "name": "PACHA OPPO A30",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001480",
+  "name": "PACHA HOT 30 PLAY",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001530",
+  "name": "PACHA HONOR X6A SM",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001580",
+  "name": "PACHA A21S CM AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001431",
+  "name": "PACHA OPPO A57 - A17",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001481",
+  "name": "PACHA HOT 50 PRO",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001531",
+  "name": "PACHA X6B - X6B PLUS",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001581",
+  "name": "PACHA A22 4G CM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001432",
+  "name": "PACHA OPPO A57 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001482",
+  "name": "PACHA NOTE 30 PRO",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001532",
+  "name": "PACHA HONOR X6B CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001582",
+  "name": "PACHA A30S SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001433",
+  "name": "PACHA OPPO A51 - A11",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001483",
+  "name": "PACHA POVA 2",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001533",
+  "name": "PACHA HONOR X6C",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001583",
+  "name": "PACHA A32 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001434",
+  "name": "PACHA OPPO A38 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001484",
+  "name": "PACHA POVA 4",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001534",
+  "name": "PACHA HONOR X7",
+  "salePrice": 54000
+ },
+ {
+  "barcode": "001584",
+  "name": "PACHA A51 CM AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001435",
+  "name": "PACHA OPPO A80 - A60",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001485",
+  "name": "PACHA POVA NEO 2",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001535",
+  "name": "PACHA HONOR X7C",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001585",
+  "name": "PACHA A52 CM AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001436",
+  "name": "PACHA A54 4G",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001486",
+  "name": "PACHA POVA 5",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001536",
+  "name": "PACHA HONOR X7B",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001586",
+  "name": "PACHA A54 AC",
+  "salePrice": 105000
+ },
+ {
+  "barcode": "001437",
+  "name": "PACHA A60 CM",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001487",
+  "name": "PACHA POVA 6",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001537",
+  "name": "PACHA HONOR X7A",
+  "salePrice": 54000
+ },
+ {
+  "barcode": "001587",
+  "name": "PACHA G10 - G20 AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001438",
+  "name": "PACHA OPPO A58 4G - A79 5G",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001488",
+  "name": "PACHA POP 2",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001538",
+  "name": "PACHA HONOR X7B CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001588",
+  "name": "PACHA G24 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001439",
+  "name": "PACHA OPPO A76",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001489",
+  "name": "PACHA POP 4",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001539",
+  "name": "PACHA HONOR X8",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001589",
+  "name": "PACHA G22 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001440",
+  "name": "PACHA OPPO A58 5G SM",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001490",
+  "name": "PACHA POP 4 AIR",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001540",
+  "name": "PACHA HONOR 8X",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001590",
+  "name": "PACHA G05 - G15 AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001441",
+  "name": "PACHA OPPO A58 CM",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001491",
+  "name": "PACHA POP 5",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001541",
+  "name": "PACHA HONOR X8B",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001591",
+  "name": "PACHA G32 - E15 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001442",
+  "name": "PACHA OPPO A73",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001492",
+  "name": "PACHA POP 6",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001542",
+  "name": "PACHA HONOR X9",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001592",
+  "name": "PACHA ONE VISION AC",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001443",
+  "name": "PACHA OPPO A78 5G",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001493",
+  "name": "PACHA REALME 6I",
+  "salePrice": 68000
+ },
+ {
+  "barcode": "001543",
+  "name": "PACHA HONOR 8 - 8I",
+  "salePrice": 95000
+ },
+ {
+  "barcode": "001593",
+  "name": "PACHA A30 CM AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001444",
+  "name": "PACHA NOVA 8I",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001494",
+  "name": "PACHA REALME 6 - 7",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001544",
+  "name": "PACHA HONOR X8A",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001594",
+  "name": "PACHA A13 - A23 AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001445",
+  "name": "PACHA NOVA 9 SE",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001495",
+  "name": "PACHA REALME 6 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001545",
+  "name": "PACHA HONOR 10 LITE",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001595",
+  "name": "PACHA A52 SM AC",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001446",
+  "name": "PACHA NOVA 10 SE",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001496",
+  "name": "PACHA REALME 7I",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001546",
+  "name": "PACHA ZTE A51 - A71",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001596",
+  "name": "PACHA G52 AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001447",
+  "name": "PACHA NOVA 5T",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001497",
+  "name": "PACHA REALME 7 PRO",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001547",
+  "name": "PACHA ZTE A34 - A54",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001597",
+  "name": "PACHA IPH 11 JK OLD",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001448",
+  "name": "PACHA NOVA PLUS",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001498",
+  "name": "PACHA REALME 8 5G",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001548",
+  "name": "PACHA ZTE A31 - A35",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001598",
+  "name": "PACHA IPH X JK OLD",
+  "salePrice": 110000
+ },
+ {
+  "barcode": "001449",
+  "name": "PACHA NOVA Y60",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001499",
+  "name": "PACHA REALME 8 PRO",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001549",
+  "name": "PACHA ZTE A36 - A76 4G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001599",
+  "name": "PACHA XS GX INCELL OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001450",
+  "name": "PACHA NOVA Y70",
+  "salePrice": 55000
+ },
+ {
+  "barcode": "001500",
+  "name": "PACHA REALME 8I",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001550",
+  "name": "PACHA ZTE A22 4G",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001600",
+  "name": "PACHA XS AM OLD",
+  "salePrice": 140000
+ },
+ {
+  "barcode": "001601",
+  "name": "PACHA XS JR OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001651",
+  "name": "PACHA M31 OLD",
+  "salePrice": 115000
+ },
+ {
+  "barcode": "001701",
+  "name": "PACHA IPH X",
+  "salePrice": 130000
+ },
+ {
+  "barcode": "001751",
+  "name": "PACHA V40 SE OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001602",
+  "name": "PACHA IPH XR OLD",
+  "salePrice": 90000
+ },
+ {
+  "barcode": "001652",
+  "name": "PACHA M32 OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001702",
+  "name": "PACHA IPH GX XS",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001752",
+  "name": "PACHA V25E OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001603",
+  "name": "PACHA IPH XR AM OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001653",
+  "name": "PACHA NOTE 10 PLUS OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001703",
+  "name": "PACHA IPH XR GX",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001753",
+  "name": "PACHA NOVA 10 SE OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001604",
+  "name": "IPH XS MAX JK OLD",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001654",
+  "name": "PACHA NOTE 10 LITE OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001704",
+  "name": "PACHA IPH GX XS MAX",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001754",
+  "name": "PACHA P30 OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001605",
+  "name": "PACHA IPH 11 PRO JK OLD",
+  "salePrice": 130000
+ },
+ {
+  "barcode": "001655",
+  "name": "PACHA NOTE 10 - 10S CM OLD",
+  "salePrice": 140000
+ },
+ {
+  "barcode": "001705",
+  "name": "PACHA IPH GX 11",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001755",
+  "name": "PACHA P50 PRO OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001606",
+  "name": "PACHA IPH 11 PRO MAX JK OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001656",
+  "name": "PACHA NOTE 10 - 10S SM OLD",
+  "salePrice": 130000
+ },
+ {
+  "barcode": "001706",
+  "name": "PACHA IPH GX 11 PRO",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001756",
+  "name": "PACHA NOTE 10 AC",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001607",
+  "name": "PACHA IPH 12/12 PRO INCELL OLD",
+  "salePrice": 155000
+ },
+ {
+  "barcode": "001657",
+  "name": "PACHA NOTE 10 PRO-11 PRO OLD",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001707",
+  "name": "PACHA IPH GX 11 PRO MAX",
+  "salePrice": 180000
+ },
+ {
+  "barcode": "001757",
+  "name": "PACHA REDMI A1 - A2 AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001608",
+  "name": "PACHA IPH 12 / 12 PRO JK OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001658",
+  "name": "PACHA NOTE 11 - 11S CM OLD",
+  "salePrice": 155000
+ },
+ {
+  "barcode": "001708",
+  "name": "PACHA IPH GX 12 - 12 PRO",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001758",
+  "name": "PACHA NOTE 8T AC",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001609",
+  "name": "PACHA IPH 12 PRO MAX JK OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001659",
+  "name": "PACHA NOTE 11 - 11S SM OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001709",
+  "name": "PACHA IPH GX 12 PRO MAX",
+  "salePrice": 260000
+ },
+ {
+  "barcode": "001759",
+  "name": "PACHA REDMI A3 AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001610",
+  "name": "PACHAIPH 13 PRO GX INCELL OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001660",
+  "name": "PACHA NOTE 12 SM OLD",
+  "salePrice": 145000
+ },
+ {
+  "barcode": "001710",
+  "name": "PACHA IPH GX 13",
+  "salePrice": 260000
+ },
+ {
+  "barcode": "001760",
+  "name": "PACHA NOTE 11 - 11S AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001611",
+  "name": "PACHA IPH 13 PRO AM OLD",
+  "salePrice": 310000
+ },
+ {
+  "barcode": "001661",
+  "name": "PACHA NOTE 12 CM OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001711",
+  "name": "PACHA IPH GX 13 JK",
+  "salePrice": 175000
+ },
+ {
+  "barcode": "001761",
+  "name": "PACHA NOTE 12 4G AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001612",
+  "name": "PACHA IPH 13 PRO JK OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001662",
+  "name": "PACHA NOTE 12 PRO PLUS OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001712",
+  "name": "PACHA IPH GX 13 PRO",
+  "salePrice": 360000
+ },
+ {
+  "barcode": "001762",
+  "name": "PACHA REDMI 13C AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001613",
+  "name": "PACHA IPH 14 PRO JK OLD",
+  "salePrice": 300000
+ },
+ {
+  "barcode": "001663",
+  "name": "PACHA NOTE 14 CM OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001713",
+  "name": "PACHA IPH GX 13 PRO MAX",
+  "salePrice": 330000
+ },
+ {
+  "barcode": "001763",
+  "name": "PACHA NOTE 13 AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001664",
+  "name": "PACHA NOTE 13 - NOTE 14 OLD",
+  "salePrice": 155000
+ },
+ {
+  "barcode": "001714",
+  "name": "PACHA IPH GX 14",
+  "salePrice": 300000
+ },
+ {
+  "barcode": "001764",
+  "name": "PACHA REDMI 14C AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001615",
+  "name": "PACHA IPH 13 PRO MAX JK OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001665",
+  "name": "PACHA NOTE 14 CM OLD",
+  "salePrice": 195000
+ },
+ {
+  "barcode": "001715",
+  "name": "PACHA IPH GX 14 PRO",
+  "salePrice": 460000
+ },
+ {
+  "barcode": "001765",
+  "name": "PACHA REDMI 10 SM AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001616",
+  "name": "PACHA IPH 14 PRO MAX GX INCELL OLD",
+  "salePrice": 290000
+ },
+ {
+  "barcode": "001666",
+  "name": "PACHA NOTE 13 CM OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001766",
+  "name": "PACHA REDMI 12C AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001617",
+  "name": "PACHA IPH 14 PRO MAX AM OLD",
+  "salePrice": 460000
+ },
+ {
+  "barcode": "001667",
+  "name": "PACHA NOTE 13 SM OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001717",
+  "name": "PACHA G85 CM OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001767",
+  "name": "PACHA REDMI 10C AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001618",
+  "name": "PACHA IPH 15 PRO MAX OLD",
+  "salePrice": 440000
+ },
+ {
+  "barcode": "001668",
+  "name": "PACHA GX IPHONE 14 PRO MAX",
+  "salePrice": 510000
+ },
+ {
+  "barcode": "001718",
+  "name": "PACHA G52 - G72 OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001768",
+  "name": "PACHA NOTE 10 PRO - 11 PRO AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001619",
+  "name": "PACHA IPH 16 PRO MAX JK OLD",
+  "salePrice": 510000
+ },
+ {
+  "barcode": "001669",
+  "name": "PACHA GX IPHONE 15 PRO MAX",
+  "salePrice": 660000
+ },
+ {
+  "barcode": "001719",
+  "name": "PACHA G31 - G41 OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001769",
+  "name": "PACHA POCO M3 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001620",
+  "name": "PACHA NOTE 13 PRO 4G SM OLD",
+  "salePrice": 185000
+ },
+ {
+  "barcode": "001720",
+  "name": "PACHA MOTO G84 SM OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001770",
+  "name": "PACHA SPARK GO - O1 AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001621",
+  "name": "PACHA NOTE 13 PRO 4G CM OLD",
+  "salePrice": 195000
+ },
+ {
+  "barcode": "001671",
+  "name": "PACHA S20 FE OLD",
+  "salePrice": 175000
+ },
+ {
+  "barcode": "001721",
+  "name": "PACHA MOTO G84 CM OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001771",
+  "name": "PACHA SPARK 10 PRO- 40 PRO AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001622",
+  "name": "PACHA NOTE 13 PRO 5G OLD",
+  "salePrice": 205000
+ },
+ {
+  "barcode": "001672",
+  "name": "PACHA S21 FE OLD",
+  "salePrice": 205000
+ },
+ {
+  "barcode": "001722",
+  "name": "PACHA RENO 7 4G OLD",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001772",
+  "name": "PACHA TECNO SPARK GO 2024 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001623",
+  "name": "PACHA NOTE 14 PRO 4G SM OLD",
+  "salePrice": 215000
+ },
+ {
+  "barcode": "001673",
+  "name": "PACHA S23 FE OLD",
+  "salePrice": 430000
+ },
+ {
+  "barcode": "001723",
+  "name": "PACHA RENO 10 5G OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001773",
+  "name": "PACHA OPPO A58 4G AC",
+  "salePrice": 75000
+ },
+ {
+  "barcode": "001624",
+  "name": "PACHA NOTE 14 PRO 5G OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001674",
+  "name": "PACHA A15 OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001724",
+  "name": "PACHA RENO 11F OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001774",
+  "name": "PACHA VIVO Y21S AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001625",
+  "name": "PACHA NOTE 14 PRO PLUS OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001675",
+  "name": "PACHA A16 OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001725",
+  "name": "PACHA RENO 11 5G OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001775",
+  "name": "PACHA VIVO Y16 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001626",
+  "name": "PACHA NOTE 13 PRO PLUS OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001676",
+  "name": "PACHA A22 4G OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001726",
+  "name": "PACHA RENO 12F OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001776",
+  "name": "PACHA Y9 2019 - Y8S AC",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001627",
+  "name": "PACHA MI 11T - 11T PRO OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001677",
+  "name": "PACHA A24 OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001727",
+  "name": "PACHA RENO 12 5G OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001777",
+  "name": "PACHA Y9 PRIME - Y9S AC",
+  "salePrice": 65000
+ },
+ {
+  "barcode": "001628",
+  "name": "PACHA MI 12 LITE OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001678",
+  "name": "PACHA A25 OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001728",
+  "name": "PACHA RENO 5 LITE OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001778",
+  "name": "PACHA P20 LITE AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001629",
+  "name": "PACHA MI 12T - 12T PRO OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001679",
+  "name": "PACHA A20 OLD",
+  "salePrice": 130000
+ },
+ {
+  "barcode": "001729",
+  "name": "PACHA RENO 13F OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001779",
+  "name": "PACHA YAA $70 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001630",
+  "name": "PACHA MI 11 LITE OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001680",
+  "name": "PACHA A26 CM OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001730",
+  "name": "PACHA RENO 13 5G OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001780",
+  "name": "PACHA P30 LITE AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001631",
+  "name": "PACHA MI 13T OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001681",
+  "name": "PACHA A30 - A50 OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001731",
+  "name": "PACHA HNR MAGIC 5 LITE OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001781",
+  "name": "PACHA P40 LITE AC",
+  "salePrice": 100000
+ },
+ {
+  "barcode": "001632",
+  "name": "PACHA ONE 200M OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001682",
+  "name": "PACHA A30 SM OLD",
+  "salePrice": 130000
+ },
+ {
+  "barcode": "001732",
+  "name": "PACHA HNR MAGIC 5 LITE CM OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001782",
+  "name": "PACHA PSMART 2019 AC",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001633",
+  "name": "PACHA EDGE 30 OLD",
+  "salePrice": 205000
+ },
+ {
+  "barcode": "001683",
+  "name": "PACHA A30S SM OLD",
+  "salePrice": 125000
+ },
+ {
+  "barcode": "001733",
+  "name": "PACHA HNR MAGIC 6 LITE OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001783",
+  "name": "PACHA VIVO Y70 AC",
+  "salePrice": 85000
+ },
+ {
+  "barcode": "001634",
+  "name": "PACHA EDGE 20 LITE CM OLD",
+  "salePrice": 280000
+ },
+ {
+  "barcode": "001684",
+  "name": "PACHA A31 OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001734",
+  "name": "PACHA HNR MAGIC 6 LITE CM OLD",
+  "salePrice": 240000
+ },
+ {
+  "barcode": "001784",
+  "name": "PACHA TCL 50 PRO AC",
+  "salePrice": 140000
+ },
+ {
+  "barcode": "001635",
+  "name": "PACHA EDGE 30 NEO OLD",
+  "salePrice": 280000
+ },
+ {
+  "barcode": "001685",
+  "name": "PACHA A32 OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001735",
+  "name": "PACHA HNR MAGIC 7 LITE OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001785",
+  "name": "PACHA VIVO Y36 - Y25 AC",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001636",
+  "name": "PACHA MOTO ONE VISION OLD",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001686",
+  "name": "PACHA A33 OLD",
+  "salePrice": 140000
+ },
+ {
+  "barcode": "001736",
+  "name": "PACHA X8C OLD",
+  "salePrice": 150000
+ },
+ {
+  "barcode": "001786",
+  "name": "PACHA X8A SM A.C",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001637",
+  "name": "PACHA EDGE 30 FUSION OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001687",
+  "name": "PACHA A34 OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001737",
+  "name": "PACHA HNR 40 LITE CM OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001787",
+  "name": "PACHA HONOR X7 SM A.C",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001638",
+  "name": "PACHA EDGE 40 NEO SM OLD",
+  "salePrice": 215000
+ },
+ {
+  "barcode": "001688",
+  "name": "PACHA A35 OLD",
+  "salePrice": 240000
+ },
+ {
+  "barcode": "001738",
+  "name": "PACHA HNR 400 LITE OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001788",
+  "name": "PACHA OPPO A57 SM A.C",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001639",
+  "name": "PACHA EDGE 40 FUSION OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001689",
+  "name": "PACHA A51 OLD",
+  "salePrice": 135000
+ },
+ {
+  "barcode": "001739",
+  "name": "PACHA HNR X8B OLD",
+  "salePrice": 160000
+ },
+ {
+  "barcode": "001789",
+  "name": "PACHA OPPO A80 SM A.C",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001640",
+  "name": "PACHA EDGE 50 - 50 PRO OLD",
+  "salePrice": 290000
+ },
+ {
+  "barcode": "001690",
+  "name": "PACHA A52 OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001740",
+  "name": "PACHA HONOR 200 OLD",
+  "salePrice": 205000
+ },
+ {
+  "barcode": "001641",
+  "name": "PACHA EDGE 50 FUSION SM OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001691",
+  "name": "PACHA A36 OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001741",
+  "name": "PACHA HONOR 90 OLD",
+  "salePrice": 200000
+ },
+ {
+  "barcode": "001642",
+  "name": "PACHA EDGE 50 FUSION CM OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001692",
+  "name": "PACHA IPH 5S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001742",
+  "name": "PACHA CAMON 30 5G OLD",
+  "salePrice": 205000
+ },
+ {
+  "barcode": "001643",
+  "name": "PACHA EDGE 50 NEO OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001693",
+  "name": "PACHA IPH 6G",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001644",
+  "name": "PACHA A53 OLD",
+  "salePrice": 190000
+ },
+ {
+  "barcode": "001694",
+  "name": "PACHA IPH 6S",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001744",
+  "name": "PACHA HOT 50 PRO PLUS OLD",
+  "salePrice": 240000
+ },
+ {
+  "barcode": "001645",
+  "name": "PACHA A54 OLD",
+  "salePrice": 195000
+ },
+ {
+  "barcode": "001695",
+  "name": "PACHA IPH 6 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001745",
+  "name": "PACHA HOT 40 PRO OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001646",
+  "name": "PACHA A70 OLD",
+  "salePrice": 170000
+ },
+ {
+  "barcode": "001696",
+  "name": "PACHA IPH 6S PLUS",
+  "salePrice": 70000
+ },
+ {
+  "barcode": "001746",
+  "name": "PACHA NOTE 40 PRO OLD",
+  "salePrice": 230000
+ },
+ {
+  "barcode": "001647",
+  "name": "PACHA A71 OLD",
+  "salePrice": 120000
+ },
+ {
+  "barcode": "001697",
+  "name": "PACHA IPH 7",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001747",
+  "name": "PACHA INFINIX NOTE 50 OLD",
+  "salePrice": 220000
+ },
+ {
+  "barcode": "001648",
+  "name": "PACHA A72 OLD",
+  "salePrice": 80000
+ },
+ {
+  "barcode": "001698",
+  "name": "PACHA IPH 7 PLUS",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001748",
+  "name": "PACHA NOTE 50S-HOT 40 PLUS OLD",
+  "salePrice": 250000
+ },
+ {
+  "barcode": "001649",
+  "name": "PACHA A55 OLD",
+  "salePrice": 210000
+ },
+ {
+  "barcode": "001699",
+  "name": "PACHA IPH 8",
+  "salePrice": 60000
+ },
+ {
+  "barcode": "001650",
+  "name": "PACHA A76 OLD",
+  "salePrice": 260000
+ },
+ {
+  "barcode": "001750",
+  "name": "PACHA VIVO V20 OLD",
+  "salePrice": 150000
+ }
+]
