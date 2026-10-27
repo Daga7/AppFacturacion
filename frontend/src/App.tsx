@@ -14,6 +14,7 @@ import SolicitudesPrecio from "./pages/SolicitudesPrecio";
 import RevisionOffline from "./pages/RevisionOffline";
 import Devoluciones from "./pages/Devoluciones";
 import Garantias from "./pages/Garantias";
+import ImpactoAmbiental from "./pages/ImpactoAmbiental";
 import Layout from "./components/Layout";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { useAuthStore } from "./stores/auth";
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/solicitudes-precio" element={<SolicitudesPrecio />} />
           <Route path="/telegram" element={<Telegram />} />
           <Route path="/revision-offline" element={<RevisionOffline />} />
+          <Route path="/impacto-ambiental" element={<ImpactoAmbiental />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

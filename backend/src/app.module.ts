@@ -20,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
 import { SyncModule } from './sync/sync.module';
 import { ReturnsModule } from './returns/returns.module';
 import { WarrantiesModule } from './warranties/warranties.module';
+import { EnvironmentModule } from './environment/environment.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WarrantiesModule } from './warranties/warranties.module';
     SyncModule,
     ReturnsModule,
     WarrantiesModule,
+    EnvironmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

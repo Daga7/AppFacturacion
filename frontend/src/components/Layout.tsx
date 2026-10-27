@@ -24,6 +24,9 @@ const requestNavItems = [
   { to: "/solicitudes-precio", label: "Solicitudes de precio", icon: "⊗" },
 ];
 
+// Informe de papel evitado (admin y supervisor).
+const environmentNavItem = { to: "/impacto-ambiental", label: "Impacto ambiental", icon: "❦" };
+
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
@@ -48,8 +51,9 @@ export default function Layout() {
             ...requestNavItems,
             { to: "/revision-offline", label: "Revisión sin conexión", icon: "◬", badge: openIssues },
             { to: "/telegram", label: "Vincular Telegram", icon: "✈" },
+            environmentNavItem,
           ]
-        : baseNavItems;
+        : [...baseNavItems, environmentNavItem];
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 
