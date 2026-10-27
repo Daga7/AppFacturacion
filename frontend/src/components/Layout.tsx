@@ -78,7 +78,9 @@ export default function Layout() {
         </button>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
+      {/* El menú se desplaza solo: en pantallas bajas el pie con el usuario
+          queda fijo abajo sin tapar los últimos módulos. */}
+      <nav className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
