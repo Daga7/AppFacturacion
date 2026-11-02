@@ -1,10 +1,20 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ReportsService } from '../reports/reports.service';
+import {
+  escapeHtml,
+  formatProfitReport,
+  formatStock,
+  helpText,
+  parseCommand,
+  type Branch,
+} from './bot-commands';
 
 // Vinculación de cuentas con Telegram (varios chats por usuario):
 // 1. El usuario genera un código único en la app (vence en 15 minutos).
@@ -12,6 +22,10 @@ import { PrismaService } from '../prisma/prisma.service';
 // 3. Telegram llama al webhook; se valida el código, se guarda el chat como
 //    un TelegramLink de la cuenta y queda verificado. Para vincular otro
 //    dispositivo/chat se genera un código nuevo.
+//
+// Los chats vinculados pueden consultar (ver bot-commands.ts): "stock
+// <código>" cualquier usuario, y "ganancias <sede> [mes]" solo ADMIN y
+// SUPERVISOR.
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_LINKS_PER_USER = 5;
@@ -19,14 +33,24 @@ const MAX_LINKS_PER_USER = 5;
 interface TelegramUpdate {
   message?: {
     text?: string;
-    chat?: { id?: number | string; title?: string; first_name?: string };
+    chat?: {
+      id?: number | string;
+      type?: string;
+      title?: string;
+      first_name?: string;
+    };
     from?: { username?: string; first_name?: string };
   };
 }
 
 @Injectable()
 export class TelegramService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TelegramService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private reports: ReportsService,
+  ) {}
 
   private generateCode() {
     return `TG-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
@@ -145,10 +169,20 @@ export class TelegramService {
       .trim()
       .match(/^\/vincular(?:@\w+)?\s+(TG-[A-F0-9]{6})\b/i);
     if (!match) {
-      if (text.trim().startsWith('/')) {
+      // Si la consulta falla se avisa en el chat y se responde 200 igual:
+      // con un error Telegram reenviaría el mensaje una y otra vez.
+      try {
+        await this.handleCommand(
+          chatId,
+          text,
+          replyToken,
+          update.message?.chat?.type,
+        );
+      } catch (e) {
+        this.logger.error(`Comando de Telegram "${text}"`, e as Error);
         await this.sendMessage(
           chatId,
-          'Para vincular tu cuenta, genera un código en la app y envíame: /vincular TG-XXXXXX',
+          'No pude responder la consulta; inténtalo de nuevo en un momento.',
           replyToken,
         );
       }
@@ -213,18 +247,129 @@ export class TelegramService {
     return { ok: true };
   }
 
+  // Consultas por chat: stock para cualquier usuario vinculado; ganancias
+  // solo para ADMIN y SUPERVISOR. En grupos solo responde a lo que reconoce.
+  async handleCommand(
+    chatId: number | string,
+    text: string,
+    token?: string,
+    chatType?: string,
+  ) {
+    const branches: Branch[] = await this.prisma.branch.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    const command = parseCommand(text, branches, new Date());
+    const reply = (message: string) =>
+      this.sendMessage(chatId, message, token, 'HTML');
+
+    const links = await this.prisma.telegramLink.findMany({
+      where: { chatId: String(chatId) },
+      select: { user: { select: { role: true } } },
+    });
+    if (!command) {
+      if (text.trim().startsWith('/') || chatType === 'private') {
+        await reply(helpText(branches, links.length > 0));
+      }
+      return;
+    }
+    if (command.kind === 'help') {
+      await reply(helpText(branches, links.length > 0));
+      return;
+    }
+    if (command.kind === 'link' || links.length === 0) {
+      await reply(
+        'Para usar el bot, genera un código en la app (Vincular Telegram) y envíame: /vincular TG-XXXXXX',
+      );
+      return;
+    }
+    if (command.kind === 'error') {
+      await reply(
+        `${escapeHtml(command.message)}\nEscribe "ayuda" para ver los comandos.`,
+      );
+      return;
+    }
+
+    if (command.kind === 'stock') {
+      await reply(await this.stockText(command.query, branches));
+      return;
+    }
+
+    const roles = new Set(links.map((l) => l.user.role));
+    if (!roles.has('ADMIN') && !roles.has('SUPERVISOR')) {
+      await reply(
+        'Las ganancias solo las pueden consultar administradores y supervisores.',
+      );
+      return;
+    }
+    const scope = command.branchIds
+      ? branches.filter((b) => command.branchIds!.includes(b.id))
+      : branches;
+    const report = await this.reports.profitBreakdown(
+      command.period.from,
+      command.period.to,
+      command.branchIds ?? undefined,
+    );
+    await reply(formatProfitReport(report, command.period, scope, branches));
+  }
+
+  // Producto por código exacto; si no hay, los que lo contienen en el código
+  // o el nombre.
+  private async stockText(query: string, branches: Branch[]) {
+    const include = {
+      category: { select: { name: true } },
+      inventories: { select: { branchId: true, amount: true } },
+    } as const;
+    let products = await this.prisma.product.findMany({
+      where: { barcode: { equals: query, mode: 'insensitive' } },
+      include,
+    });
+    if (products.length === 0) {
+      products = await this.prisma.product.findMany({
+        where: {
+          OR: [
+            { barcode: { contains: query, mode: 'insensitive' } },
+            { name: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        include,
+        orderBy: [{ isActive: 'desc' }, { barcode: 'asc' }],
+        take: 11,
+      });
+    }
+    return formatStock(
+      query,
+      products.map((p) => ({
+        name: p.name,
+        barcode: p.barcode,
+        isActive: p.isActive,
+        retailPrice: Number(p.retailPrice),
+        salePrice: Number(p.salePrice),
+        wholesalePrice: Number(p.wholesalePrice),
+        category: p.category.name,
+        stock: new Map(p.inventories.map((i) => [i.branchId, i.amount])),
+      })),
+      branches,
+    );
+  }
+
   // Envía un mensaje por el bot; si no hay token configurado, no hace nada.
   async sendMessage(
     chatId: number | string,
     text: string,
     token = process.env.TELEGRAM_BOT_TOKEN,
+    parseMode?: 'HTML',
   ) {
     if (!token) return false;
     try {
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text }),
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          ...(parseMode ? { parse_mode: parseMode } : {}),
+        }),
       });
       return true;
     } catch {

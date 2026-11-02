@@ -384,6 +384,141 @@ export class ReportsService {
     };
   }
 
+  // Ganancia entre dos instantes desglosada por sede, categoría y producto
+  // (informe del bot de Telegram). Misma regla que profitTotal: a cada línea
+  // se le resta lo devuelto, y las ventas devueltas por completo no cuentan.
+  async profitBreakdown(from: Date, to: Date, branchIds?: string[]) {
+    const branchFilter = branchIds?.length
+      ? Prisma.sql`AND s."branchId" IN (${Prisma.join(branchIds)})`
+      : Prisma.empty;
+    const returns = Prisma.sql`
+      LEFT JOIN (
+        SELECT "saleDetailId",
+               SUM("quantity") AS "units",
+               SUM("refundAmount") AS "refunded"
+        FROM "SaleReturn"
+        GROUP BY "saleDetailId"
+      ) r ON r."saleDetailId" = sd."id"`;
+
+    const [lines, sales, categories] = await Promise.all([
+      this.prisma.$queryRaw<
+        {
+          branchId: string;
+          category: string;
+          productId: string;
+          product: string;
+          units: number;
+          revenue: number;
+          cost: number;
+        }[]
+      >`
+        SELECT s."branchId", c."name" AS category, p."id" AS "productId",
+               p."name" AS product,
+               SUM(sd."quantity" - COALESCE(r."units", 0))::int AS units,
+               SUM(sd."subtotal" - COALESCE(r."refunded", 0))::float AS revenue,
+               SUM(p."purchasePrice" * (sd."quantity" - COALESCE(r."units", 0)))::float AS cost
+        FROM "SaleDetail" sd
+        JOIN "Sale" s ON s."id" = sd."saleId"
+        JOIN "Product" p ON p."id" = sd."productId"
+        JOIN "Category" c ON c."id" = p."categoryId"
+        ${returns}
+        WHERE s."status" = 'COMPLETED'
+          AND s."createdAt" >= ${from} AND s."createdAt" < ${to}
+          ${branchFilter}
+        GROUP BY s."branchId", c."name", p."id", p."name"
+      `,
+      this.prisma.$queryRaw<{ branchId: string; sales: number }[]>`
+        SELECT x."branchId", COUNT(*)::int AS sales
+        FROM (
+          SELECT s."id", s."branchId"
+          FROM "Sale" s
+          JOIN "SaleDetail" sd ON sd."saleId" = s."id"
+          ${returns}
+          WHERE s."status" = 'COMPLETED'
+            AND s."createdAt" >= ${from} AND s."createdAt" < ${to}
+            ${branchFilter}
+          GROUP BY s."id", s."branchId"
+          HAVING SUM(sd."quantity" - COALESCE(r."units", 0)) > 0
+        ) x
+        GROUP BY x."branchId"
+      `,
+      this.prisma.category.findMany({
+        select: { name: true },
+        orderBy: { name: 'asc' },
+      }),
+    ]);
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const empty = () => ({ units: 0, revenue: 0, cost: 0 });
+    const add = (
+      acc: { units: number; revenue: number; cost: number },
+      l: { units: number; revenue: number; cost: number },
+    ) => {
+      acc.units += l.units;
+      acc.revenue += l.revenue;
+      acc.cost += l.cost;
+    };
+    const finish = <T extends { units: number; revenue: number; cost: number }>(
+      x: T,
+    ) => ({
+      ...x,
+      revenue: round(x.revenue),
+      cost: round(x.cost),
+      profit: round(x.revenue - x.cost),
+    });
+
+    const salesBy = new Map(sales.map((s) => [s.branchId, s.sales]));
+    const totals = empty();
+    const byBranch = new Map<string, ReturnType<typeof empty>>();
+    const byCategory = new Map<
+      string,
+      {
+        totals: ReturnType<typeof empty>;
+        products: Map<string, { name: string } & ReturnType<typeof empty>>;
+      }
+    >();
+    for (const l of lines.filter((l) => l.units > 0)) {
+      add(totals, l);
+      if (!byBranch.has(l.branchId)) byBranch.set(l.branchId, empty());
+      add(byBranch.get(l.branchId)!, l);
+      if (!byCategory.has(l.category)) {
+        byCategory.set(l.category, { totals: empty(), products: new Map() });
+      }
+      const cat = byCategory.get(l.category)!;
+      add(cat.totals, l);
+      if (!cat.products.has(l.productId)) {
+        cat.products.set(l.productId, { name: l.product, ...empty() });
+      }
+      add(cat.products.get(l.productId)!, l);
+    }
+
+    const byProfit = (a: { profit: number }, b: { profit: number }) =>
+      b.profit - a.profit;
+    return {
+      period: { from: from.toISOString(), to: to.toISOString() },
+      totals: {
+        sales: sales.reduce((sum, s) => sum + s.sales, 0),
+        ...finish(totals),
+      },
+      branches: [...byBranch].map(([branchId, t]) => ({
+        branchId,
+        sales: salesBy.get(branchId) ?? 0,
+        ...finish(t),
+      })),
+      categories: [...byCategory]
+        .map(([name, c]) => ({
+          name,
+          ...finish(c.totals),
+          products: [...c.products.values()].map(finish).sort(byProfit),
+        }))
+        .sort(byProfit),
+      // Categorías sin ventas en el periodo, para decirlo en el informe.
+      emptyCategories: categories
+        .map((c) => c.name)
+        .filter((name) => !byCategory.has(name)),
+    };
+  }
+
   async paymentSummary(branchId?: string, days = 30) {
     const since = new Date();
     since.setDate(since.getDate() - days);

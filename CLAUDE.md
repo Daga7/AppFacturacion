@@ -147,7 +147,11 @@ The CASHIER can open cash, sell (cash or credit), register loan payments and loa
 
 `backend/src/environment/`, page `/impacto-ambiental` (ADMIN and SUPERVISOR, read-only). Sheets of paper avoided = each branch's daily paper use before the app (`DAILY_SHEETS_BY_BRANCH`, from the environmental diagnosis: Aguachica 5, Ocaña 3) × days the branch registered a sale or opened cash since `PILOT_START` (2026-10-01, Bogotá time). The rest of the month is projected as if every remaining day had operation. The endpoint returns the factors (100 sheets per notebook, 500 per ream, 4.75 g CO₂e and $80 per sheet) and the frontend computes the equivalences from them, so the assumptions live only in `environment.service.ts`.
 
-`backend/prisma/demo-octubre.ts` loads fictitious October 2026 sales for the thesis demo (dry run by default, `--apply` writes, `--remove` deletes). What it loads is listed in `backend/prisma/demo-octubre.manifest.json`; `--remove` needs that file.
+`backend/prisma/demo-octubre.ts` loads fictitious October 2026 sales for the thesis demo (dry run by default, `--apply` writes, `--remove` deletes). What it loads is listed in `backend/prisma/demo-octubre.manifest.json`; `--remove` needs that file. `demo-continuacion.ts` (same flags, its own manifest) continues it from Oct 27 to Nov 2: monthly targets count what is already in the DB, so October ends at 2,000 sales, $70,000 ticket per branch and 35.7 % margin; it also adds payments to October loans. Remove it before `demo-modulos.ts`/`demo-octubre.ts` and load it after them.
+
+## Telegram bot
+
+`backend/src/telegram/`. Chats link to a user with `/vincular TG-XXXXXX` (code from the `/telegram` page, ADMIN only). Linked chats can query the bot (`bot-commands.ts` parses and formats, `TelegramService.handleCommand` runs it): `ganancias <sede> [mes]` gives today's profit (or that whole month) broken down by category and top products, ADMIN/SUPERVISOR only, via `ReportsService.profitBreakdown`; `stock <código>` gives a product's stock per branch (falls back to a name search). Branch can be abbreviated (`oca`); no branch means all. The webhook (`POST /telegram/webhook`) points to the Render backend.
 
 ## Deployment
 

@@ -28,6 +28,15 @@ interface LinkCode {
   botUsername: string | null;
 }
 
+// Consultas que responde el bot (backend/src/telegram/bot-commands.ts).
+const BOT_COMMANDS: [string, string][] = [
+  ["ganancias aguachica", "ganancias de hoy en Aguachica"],
+  ["ganancias oca", "ganancias de hoy en Ocaña (la sede puede ir abreviada)"],
+  ["ganancias aguachica octubre", "ganancias de un mes completo"],
+  ["ganancias", "ganancias de hoy en todas las sedes"],
+  ["stock 001101", "existencias de un producto en cada sede, por su código"],
+];
+
 // Vinculación de la cuenta con Telegram: se pueden vincular varios chats
 // (hasta el máximo que indique el backend), cada uno con su propio código.
 export default function Telegram() {
@@ -136,6 +145,25 @@ export default function Telegram() {
                 {saving ? "Generando..." : links.length > 0 ? "Vincular otro chat" : "Generar código"}
               </button>
             )}
+          </Card>
+
+          <Card className="p-6 space-y-3">
+            <p className="text-white font-medium">Consultas por el bot</p>
+            <p className="text-sm text-slate-400">
+              Desde un chat vinculado escríbele al bot (con o sin "/"):
+            </p>
+            <ul className="text-sm text-slate-300 space-y-2">
+              {BOT_COMMANDS.map(([command, help]) => (
+                <li key={command}>
+                  <code className="bg-slate-800 px-2 py-0.5 rounded font-mono text-emerald-400">{command}</code>{" "}
+                  {help}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-slate-500">
+              Las ganancias salen por categoría (pantallas, baterías…) y con los productos que más dejan; solo
+              responden a chats de administradores y supervisores. "ayuda" muestra la lista en Telegram.
+            </p>
           </Card>
 
           {linkCode && (
