@@ -7,7 +7,8 @@
  * margen de ganancia de 35,7 %. Cada día cada sede abre y cierra caja; ~5 %
  * de las ventas son a crédito y reciben abonos en los días siguientes. Cada
  * venta deja su movimiento de inventario, y una entrada de mercancía el 1 de
- * octubre cubre lo vendido, así que el stock actual no cambia.
+ * octubre cubre lo vendido, así que el stock actual no cambia. La pantalla
+ * más vendida en las dos sedes es la del Samsung A35 (BEST_SELLER).
  *
  * A los productos con costo de compra 0 se les pone un costo proporcional a
  * su precio, el que hace que la ganancia total dé 35,7 %.
@@ -40,12 +41,15 @@ const YEAR = 2026;
 const MONTH = 10;
 const DAYS_IN_MONTH = 31;
 const LAST_DAY = 26; // del 1 al 26 de octubre: hasta hoy
-const MONTHLY_SALES = 2000;
-const TARGET_TICKET = 70_000;
-const TARGET_MARGIN = 0.357;
-const CREDIT_SHARE = 0.05;
+export const MONTHLY_SALES = 2000;
+export const TARGET_TICKET = 70_000;
+export const TARGET_MARGIN = 0.357;
+export const CREDIT_SHARE = 0.05;
+// La más vendida de cada sede: BEST_SELLER_SHARE de las pantallas vendidas.
+export const BEST_SELLER = 'PACHA A35 CM';
+const BEST_SELLER_SHARE = 0.08;
 
-const BRANCHES = [
+export const BRANCHES = [
   { name: 'Aguachica', share: 5 / 8, openingAmount: 200_000 },
   { name: 'Ocaña', share: 3 / 8, openingAmount: 150_000 },
 ];
@@ -78,9 +82,9 @@ const CUSTOMERS: Record<string, [string, string][]> = {
 // Lunes festivo (Día de la Diversidad Étnica y Cultural).
 const HOLIDAYS = [12];
 // Peso de cada día de la semana (domingo = 0) y de los días de pago.
-const WEEKDAY_WEIGHT = [0.55, 0.9, 0.85, 0.9, 0.95, 1.1, 1.35];
-const HOLIDAY_WEIGHT = 0.7;
-const PAYDAYS = [1, 15, 16, 30, 31];
+export const WEEKDAY_WEIGHT = [0.55, 0.9, 0.85, 0.9, 0.95, 1.1, 1.35];
+export const HOLIDAY_WEIGHT = 0.7;
+export const PAYDAYS = [1, 15, 16, 30, 31];
 // Ventas por hora: de lunes a sábado de 8 a. m. a 7 p. m.; domingos y
 // festivos de 9 a. m. a 1:30 p. m.
 const HOURS: [number, number][] = [
@@ -114,17 +118,21 @@ const DISCOUNT_REASONS = [
 // --- Azar reproducible ------------------------------------------------------
 // Con semilla fija: la simulación y --apply generan los mismos datos (salvo
 // los ids) mientras la BD no cambie.
-let seed = 20261026;
-const rand = () => {
+export const SEED = 20261026;
+let seed = SEED;
+export const reseed = (value: number) => {
+  seed = value;
+};
+export const rand = () => {
   seed = (seed + 0x6d2b79f5) | 0;
   let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
-const randInt = (min: number, max: number) =>
+export const randInt = (min: number, max: number) =>
   min + Math.floor(rand() * (max - min + 1));
-const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
-const weighted = <T>(options: [T, number][]) => {
+export const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
+export const weighted = <T>(options: [T, number][]) => {
   let x = rand() * options.reduce((sum, [, w]) => sum + w, 0);
   for (const [value, w] of options) {
     x -= w;
@@ -134,21 +142,21 @@ const weighted = <T>(options: [T, number][]) => {
 };
 const gaussian = () =>
   Math.sqrt(-2 * Math.log(1 - rand())) * Math.cos(2 * Math.PI * rand());
-const shuffle = <T>(items: T[]) => {
+export const shuffle = <T>(items: T[]) => {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [items[i], items[j]] = [items[j], items[i]];
   }
   return items;
 };
-const thousands = (n: number) => Math.floor(n / 1000) * 1000;
+export const thousands = (n: number) => Math.floor(n / 1000) * 1000;
 
 // Instante de una hora de Colombia (UTC-5) de octubre: segundos desde la
 // medianoche local.
-const localTime = (day: number, seconds: number) =>
+export const localTime = (day: number, seconds: number) =>
   new Date(Date.UTC(YEAR, MONTH - 1, day, 5) + seconds * 1000);
 
-const nameKey = (name: string) =>
+export const nameKey = (name: string) =>
   name.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 
 // --- Plan -------------------------------------------------------------------
@@ -160,7 +168,7 @@ export interface CatalogItem {
   cost: number; // costo de compra actual (0 = sin costear)
 }
 
-interface Product extends CatalogItem {
+export interface Product extends CatalogItem {
   popularity: number;
 }
 
@@ -176,7 +184,7 @@ export interface BranchInput {
   inventoryIds: Map<string, string>;
 }
 
-interface Line {
+export interface Line {
   productId: string;
   price: number;
   quantity: number;
@@ -184,11 +192,11 @@ interface Line {
   discountReason: string | null;
 }
 
-interface Ticket {
+export interface Ticket {
   lines: Line[];
 }
 
-interface Day {
+export interface Day {
   day: number;
   short: boolean;
   openAt: number; // segundos desde la medianoche
@@ -210,7 +218,7 @@ export interface Plan {
   productCosts: { id: string; previous: number; cost: number }[];
 }
 
-const ticketTotal = (t: Ticket) =>
+export const ticketTotal = (t: Ticket) =>
   t.lines.reduce((sum, l) => sum + l.price * l.quantity - l.discount, 0);
 
 const newLine = (p: Product, quantity: number): Line => ({
@@ -223,7 +231,7 @@ const newLine = (p: Product, quantity: number): Line => ({
 
 // Descuento en miles sobre una línea, de máximo 10 % de la línea. Devuelve
 // lo que de verdad se descontó.
-function discount(line: Line, amount: number, reason: string) {
+export function discount(line: Line, amount: number, reason: string) {
   const room = thousands(line.price * line.quantity * 0.1) - line.discount;
   const applied = Math.max(0, Math.min(amount, room));
   if (applied > 0) {
@@ -235,11 +243,19 @@ function discount(line: Line, amount: number, reason: string) {
 
 // Se venden más las pantallas baratas: el peso de cada producto es su
 // popularidad × e^(−λ·precio), con λ tal que el ticket esperado sea el
-// objetivo.
-function productSampler(products: Product[]) {
+// objetivo. BEST_SELLER se lleva una parte fija de las ventas.
+export function productSampler(products: Product[]) {
   const min = Math.min(...products.map((p) => p.price));
-  const weights = (lambda: number) =>
-    products.map((p) => p.popularity * Math.exp(-lambda * (p.price - min)));
+  const best = products.findIndex((p) => p.name === BEST_SELLER);
+  if (best < 0) throw new Error(`No existe el producto "${BEST_SELLER}".`);
+  const weights = (lambda: number) => {
+    const w = products.map((p, i) =>
+      i === best ? 0 : p.popularity * Math.exp(-lambda * (p.price - min)),
+    );
+    const rest = w.reduce((a, b) => a + b, 0);
+    w[best] = (rest * BEST_SELLER_SHARE) / (1 - BEST_SELLER_SHARE);
+    return w;
+  };
   const expectedTicket = (lambda: number) => {
     const w = weights(lambda);
     const total = w.reduce((a, b) => a + b, 0);
@@ -272,7 +288,7 @@ function productSampler(products: Product[]) {
   };
 }
 
-function makeTicket(sample: () => Product): Ticket {
+export function makeTicket(sample: () => Product): Ticket {
   const first = sample();
   const kind = rand();
   const lines = [newLine(first, kind >= 0.85 && kind < 0.92 ? 2 : 1)];
@@ -317,7 +333,7 @@ function ticketsWithAverage(n: number, sample: () => Product) {
   return best;
 }
 
-function saleSecond(d: Day) {
+export function saleSecond(d: Day) {
   for (;;) {
     const hour = weighted(d.short ? SHORT_DAY_HOURS : HOURS);
     const s = Math.floor((hour + rand()) * 3600);
@@ -326,7 +342,7 @@ function saleSecond(d: Day) {
 }
 
 // Reparte `total` según los pesos (método del mayor residuo).
-function allocate(total: number, weights: number[]) {
+export function allocate(total: number, weights: number[]) {
   const sum = weights.reduce((a, b) => a + b, 0);
   const raw = weights.map((w) => (total * w) / sum);
   const counts = raw.map(Math.floor);
@@ -341,7 +357,7 @@ function allocate(total: number, weights: number[]) {
   return counts;
 }
 
-function salePaymentsFor(total: number, credit: boolean) {
+export function salePaymentsFor(total: number, credit: boolean) {
   const payments: { method: PaymentMethod; amount: number }[] = [];
   if (credit) {
     // La mitad de los préstamos deja una cuota inicial.
@@ -374,10 +390,16 @@ function salePaymentsFor(total: number, credit: boolean) {
   return payments;
 }
 
-export function buildPlan(catalog: CatalogItem[], branches: BranchInput[]) {
-  const products: Product[] = catalog
+// Popularidad de cada producto: son las primeras tiradas tras la semilla, así
+// que con la semilla inicial y el mismo catálogo se repite la de octubre.
+export function withPopularity(catalog: CatalogItem[]): Product[] {
+  return catalog
     .filter((p) => p.price > 0)
     .map((p) => ({ ...p, popularity: Math.exp(0.9 * gaussian()) }));
+}
+
+export function buildPlan(catalog: CatalogItem[], branches: BranchInput[]) {
+  const products = withPopularity(catalog);
   const sample = productSampler(products);
   const plan: Plan = {
     cashSessions: [],
@@ -653,7 +675,7 @@ export function buildPlan(catalog: CatalogItem[], branches: BranchInput[]) {
 
 // --- Resumen ----------------------------------------------------------------
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
+export const money = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
 
 export function printSummary(
   plan: Plan,
@@ -719,17 +741,23 @@ export function printSummary(
     `Medios de pago en ventas: ${[...methods].map(([m, v]) => `${m} ${((100 * v) / paid).toFixed(0)} %`).join(' · ')}`,
   );
 
-  const units = new Map<string, number>();
-  for (const d of plan.saleDetails) {
-    units.set(d.productId, (units.get(d.productId) ?? 0) + d.quantity);
+  for (const b of branches) {
+    const ids = new Set(
+      plan.sales.filter((s) => s.branchId === b.id).map((s) => s.id),
+    );
+    const units = new Map<string, number>();
+    for (const d of plan.saleDetails) {
+      if (!ids.has(d.saleId)) continue;
+      units.set(d.productId, (units.get(d.productId) ?? 0) + d.quantity);
+    }
+    console.log(
+      `Más vendidos en ${b.name}: ${[...units]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([id, n]) => `${names.get(id)} (${n})`)
+        .join(' · ')}`,
+    );
   }
-  console.log(
-    `Más vendidos: ${[...units]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([id, n]) => `${names.get(id)} (${n})`)
-      .join(' · ')}`,
-  );
   console.log(
     `Inventario: ${plan.movements.length} movimientos (${plan.movements.filter((m) => m.type === 'STOCK_IN').length} entradas), ${plan.inventories.length} registros de inventario nuevos`,
   );
@@ -759,17 +787,17 @@ interface Manifest {
   productCosts: { id: string; previous: number }[];
 }
 
-const TX = { maxWait: 30_000, timeout: 600_000 };
+export const TX = { maxWait: 30_000, timeout: 600_000 };
 
-const chunks = <T>(rows: T[], size = 1000) =>
+export const chunks = <T>(rows: T[], size = 1000) =>
   Array.from({ length: Math.ceil(rows.length / size) }, (_, i) =>
     rows.slice(i * size, (i + 1) * size),
   );
 
-const ids = (rows: { id?: string }[]) => rows.map((r) => r.id!);
+export const ids = (rows: { id?: string }[]) => rows.map((r) => r.id!);
 
 // Agrupa ids por valor para actualizar con un updateMany por valor.
-const groupIds = (rows: { id: string; value: number }[]) => {
+export const groupIds = (rows: { id: string; value: number }[]) => {
   const groups = new Map<number, string[]>();
   for (const r of rows)
     groups.set(r.value, [...(groups.get(r.value) ?? []), r.id]);
@@ -840,8 +868,10 @@ async function main() {
       where: { branchId: branch.id },
       select: { id: true, productId: true },
     });
+    // La numeración sigue a la última venta anterior a octubre: al volver a
+    // cargar, las ventas reales posteriores a la demostración no la corren.
     const last = await prisma.sale.findFirst({
-      where: { branchId: branch.id },
+      where: { branchId: branch.id, createdAt: { lt: localTime(1, 0) } },
       orderBy: { invoiceNumber: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -889,6 +919,24 @@ async function main() {
 
   const plan = buildPlan(catalog, branches);
   printSummary(plan, catalog, branches);
+  for (const b of branches) {
+    const taken = await prisma.sale.findFirst({
+      where: {
+        branchId: b.id,
+        invoiceNumber: {
+          in: plan.sales
+            .filter((s) => s.branchId === b.id)
+            .map((s) => s.invoiceNumber),
+        },
+      },
+      select: { invoiceNumber: true },
+    });
+    if (taken) {
+      throw new Error(
+        `La factura ${taken.invoiceNumber} de ${b.name} ya existe: hay ventas reales entre el 1 y el ${LAST_DAY} de octubre.`,
+      );
+    }
+  }
   if (users.length > 0) {
     console.log(
       `Vendedores nuevos (contraseña aleatoria): ${users.map((u) => u.username).join(', ')}`,
@@ -965,6 +1013,12 @@ async function remove() {
   if (!fs.existsSync(MANIFEST)) {
     throw new Error(
       `No hay ventas de demostración cargadas (falta ${path.basename(MANIFEST)}).`,
+    );
+  }
+  // La continuación abona préstamos de octubre y cuenta con sus ventas.
+  if (fs.existsSync(path.join(__dirname, 'demo-continuacion.manifest.json'))) {
+    throw new Error(
+      'Primero borra la continuación: demo-continuacion.ts --remove.',
     );
   }
   const m = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) as Manifest;
